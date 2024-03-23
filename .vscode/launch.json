@@ -5,8 +5,8 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
-            "type": "python",
+            "name": "Python: Joystick Gremlin Ex",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/joystick_gremlin.py",
             "console": "integratedTerminal",
