@@ -21,7 +21,7 @@ import threading
 import time
 from xml.etree import ElementTree
 
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore
 
 from gremlin.base_classes import InputActionCondition
 from gremlin.common import InputType
@@ -30,6 +30,7 @@ from gremlin.error import ProfileError
 from gremlin.profile import safe_format, safe_read
 import gremlin.ui.common
 import gremlin.ui.input_item
+import gremlin.ui.device_tab
 
 
 class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
@@ -37,6 +38,8 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
     """Dialog which allows the selection of a vJoy output to use as
     as the remapping for the currently selected input.
     """
+
+    controls_description_changed = QtCore.Signal()
 
     # Mapping from types to display names
     type_to_name_map = {
@@ -83,7 +86,6 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             input_types[self._get_input_type()]
         )
         self.main_layout.addWidget(self.controls_selector)
-
 
         # Create UI widgets for absolute / relative axis modes if the remap
         # action is being added to an axis input type
@@ -176,11 +178,16 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             controls_data = self.controls_selector.get_selection()
             input_type_changed = \
                 self.action_data.input_type != controls_data["input_type"]
+            controls_changed = \
+                self.action_data.controls_id != controls_data["controls_id"]
             self.action_data.category_id = controls_data["category_id"]
             self.action_data.controls_id = controls_data["controls_id"]
             self.action_data.input_type = controls_data["input_type"]
             self.action_data.vjoy_device_id = controls_data["vjoy_device_id"]
             self.action_data.vjoy_input_id = controls_data["vjoy_input_id"]
+            self.action_data.parent_input_item.description = controls_data["description"]
+            el = gremlin.event_handler.EventListener()
+            el.action_description_changed.emit()
 
             if self.action_data.input_type == InputType.JoystickAxis:
                 self.action_data.axis_mode = "absolute"
@@ -189,7 +196,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
                 self.action_data.axis_scaling = self.relative_scaling.value()
 
             # Signal changes
-            if input_type_changed:
+            if input_type_changed or controls_changed:
                 self.action_modified.emit()
         except gremlin.error.GremlinError as e:
             logging.getLogger("system").error(str(e))
@@ -333,6 +340,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         self.axis_scaling = 1.0
         self.category_id = None
         self.controls_id = None
+        self.parent_input_item = parent.parent
 
     def icon(self):
         """Returns the icon corresponding to the remapped input.
@@ -476,7 +484,7 @@ class ControlsSelector(QtWidgets.QWidget):
             {
                 "category_id": 10,
                 "values": [ 
-                            { "name": "Pitch", "id": 11, "type": "axis", "vjoy": 1, "axis": 2 },
+                            { "name": "Pitch", "id": 11, "type": "axis", "vjoy": 1, "axis": 2},
                             { "name": "Yaw", "id": 21, "type": "axis", "vjoy": 1, "axis": 3 },
                             { "name": "Roll", "id": 31, "type": "axis", "vjoy": 1, "axis": 1 }
                         ]
@@ -532,6 +540,7 @@ class ControlsSelector(QtWidgets.QWidget):
                 vjoy_input_id = control["values"][control_index]["keyboard"]
          
         input_type = self.valid_types[0]
+        description = self.category_list[self.category_dropdown.currentIndex()]["name"] + " - " + self.controls_list[self.category_dropdown.currentIndex()]["values"][control_index]["name"]
 
         return {
             "category_id": category_id,
@@ -539,6 +548,7 @@ class ControlsSelector(QtWidgets.QWidget):
             "input_type": input_type,
             "vjoy_device_id": vjoy_device_id,
             "vjoy_input_id": vjoy_input_id,
+            "description": description
         }
 
     def set_selection(self, input_type, category_id, controls_id):

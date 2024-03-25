@@ -179,6 +179,8 @@ class EventListener(QtCore.QObject):
     device_change_event = QtCore.Signal()
     # Signal emitted when the icon needs to be refreshed
     icon_changed = QtCore.Signal(DeviceChangeEvent)
+    # Signal emitted when the action description is changed
+    action_description_changed = QtCore.Signal()
 
     # Signal emitted when a profile is changed (to refresh UI)
     profile_changed = QtCore.Signal()

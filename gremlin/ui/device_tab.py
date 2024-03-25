@@ -108,8 +108,12 @@ class InputItemConfiguration(QtWidgets.QFrame):
         )
         self.description_field = QtWidgets.QLineEdit()
         self.description_field.setText(self.item_data.description)
-        self.description_field.textChanged.connect(self._edit_description_cb)
+        self.description_field.textEdited.connect(self._edit_description_cb)
         self.description_layout.addWidget(self.description_field)
+
+        # Allow description to be changed from an input item
+        el = gremlin.event_handler.EventListener()
+        el.action_description_changed.connect(self._refresh_description)
 
         self.main_layout.addLayout(self.description_layout)
 
@@ -146,6 +150,14 @@ class InputItemConfiguration(QtWidgets.QFrame):
         self.action_selector.action_added.connect(self._add_action)
         self.action_layout.addWidget(self.action_selector)
         self.main_layout.addLayout(self.action_layout)
+
+
+    def _refresh_description(self):
+        """Handles refreshing the description text field with latest description
+
+        """
+        self.description_field.setText("%s" % self.item_data.description)
+
 
     def _edit_description_cb(self, text):
         """Handles changes to the description text field.
