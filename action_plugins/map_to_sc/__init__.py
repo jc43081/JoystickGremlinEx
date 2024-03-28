@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2024 Jeff Cain
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -60,10 +60,12 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         :param action_data profile data managed by this widget
         :param parent the parent of this widget
         """
+        gremlin.util.log("MapToScWidget::init " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         super().__init__(action_data, parent=parent)
         assert(isinstance(action_data, MapToSc))
 
     def _create_ui(self):
+        gremlin.util.log("MapToScWidget::create ui " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         """Creates the UI components."""
         input_types = {
             InputType.Keyboard: [
@@ -81,7 +83,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
                 InputType.JoystickHat
             ]
         }
-        self.controls_selector = ControlsSelector(
+        self.controls_selector = ScControlsSelector(
             lambda x: self.save_controls_changes(),
             input_types[self._get_input_type()]
         )
@@ -92,7 +94,6 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         if self.action_data.get_input_type() == InputType.JoystickAxis:
             self.maptosc_type_widget = QtWidgets.QWidget()
             self.maptosc_type_layout = QtWidgets.QHBoxLayout(self.maptosc_type_widget)
-
 
             self.absolute_checkbox = QtWidgets.QRadioButton("Absolute")
             self.absolute_checkbox.setChecked(True)
@@ -116,21 +117,17 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
     def _populate_ui(self):
         """Populates the UI components."""
+        gremlin.util.log("MapToScWidget::populate ui  " + time.strftime("%a, %d %b %Y %H:%M:%S"))
 
         # Set the initial category and controls ids
         if (self.action_data.category_id != None):
             category_id = self.action_data.category_id
         else:
-            category_id = self.controls_selector.category_list[0]["id"]
+            category_id = self.controls_selector.controls_list[0]["category_id"]
         if (self.action_data.controls_id != None):
             controls_id = self.action_data.controls_id
         else:
             controls_id = self.controls_selector.controls_list[0]["values"][0]["id"]
-
-        # Get the appropriate vjoy device identifier
-        vjoy_dev_id = 0
-        if self.action_data.vjoy_device_id not in [0, None]:
-            vjoy_dev_id = self.action_data.vjoy_device_id
 
         # Get the input type which can change depending on the container used
         input_type = self.action_data.input_type
@@ -173,13 +170,12 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
     def save_controls_changes(self):
         """Saves UI contents to the profile data storage."""
+        gremlin.util.log("MapToScWidget::save controls changes " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         # Store map to sc data
         try:
             controls_data = self.controls_selector.get_selection()
             input_type_changed = \
                 self.action_data.input_type != controls_data["input_type"]
-            controls_changed = \
-                self.action_data.controls_id != controls_data["controls_id"]
             self.action_data.category_id = controls_data["category_id"]
             self.action_data.controls_id = controls_data["controls_id"]
             self.action_data.input_type = controls_data["input_type"]
@@ -196,7 +192,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
                 self.action_data.axis_scaling = self.relative_scaling.value()
 
             # Signal changes
-            if input_type_changed or controls_changed:
+            if input_type_changed:
                 self.action_modified.emit()
         except gremlin.error.GremlinError as e:
             logging.getLogger("system").error(str(e))
@@ -311,7 +307,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
     """Action remapping physical joystick inputs to Game-defined inputs."""
 
     name = "Map To SC"
-    tag = "maptosc"
+    tag = "map-to-sc"
 
     default_button_activation = (True, True)
     input_types = [
@@ -330,6 +326,8 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         :param parent the container to which this action belongs
         """
         super().__init__(parent)
+
+        gremlin.util.log("MapToSC::Init")
 
         # Set vjoy ids to None so we know to pick the next best one
         # automatically
@@ -356,6 +354,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
         :return True if an activation condition is required, False otherwise
         """
+        gremlin.util.log("MapToSC::requires_virtual_button " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         input_type = self.get_input_type()
 
         if input_type in [InputType.JoystickButton, InputType.Keyboard]:
@@ -376,6 +375,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
         :param node XML node with which to populate the storage
         """
+        gremlin.util.log("MapToSC::parse xml " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         try:
             if "axis" in node.attrib:
                 self.input_type = InputType.JoystickAxis
@@ -413,6 +413,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
         :return XML node containing the action's data
         """
+        gremlin.util.log("MapToSC::generate xml " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         node = ElementTree.Element("maptosc")
         node.set("vjoy", str(self.vjoy_device_id))
         if self.input_type == InputType.Keyboard:
@@ -440,15 +441,11 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
         :return True if the action is configured correctly, False otherwise
         """
-
-                
-        # TODO: Update this with real once understood
-        #return not(self.vjoy_device_id is None or self.vjoy_input_id is None)
-        return True
-        
+        gremlin.util.log("MapToSC::is valid " + time.strftime("%a, %d %b %Y %H:%M:%S"))
+        return not(self.category_id is None or self.controls_id is None)              
 
 
-class ControlsSelector(QtWidgets.QWidget):
+class ScControlsSelector(QtWidgets.QWidget):
 
     """
         Create a Selector that can allows for managing a category and 
@@ -456,8 +453,6 @@ class ControlsSelector(QtWidgets.QWidget):
     
         Category will provide the valid list of controls.
         Controls will be mapped to proper vJoy Device and Input
-
-        
     """
 
     def __init__(self, change_cb, valid_types, parent=None):
@@ -465,24 +460,26 @@ class ControlsSelector(QtWidgets.QWidget):
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
 
+        gremlin.util.log("ControlsSelector::init: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
+
         self.change_cb = change_cb
+
+        if InputType.JoystickAxis in valid_types:
+            self.current_input_type = "axis"
+        elif InputType.JoystickButton in valid_types:
+            self.current_input_type = "button"
+        elif InputType.JoystickHat in valid_types:
+            self.current_input_type = "hat"
+        elif InputType.Keyboard in valid_types:
+            self.current_input_type = "button"
+        else:
+            self.current_input_type = "unknown"
         self.valid_types = valid_types
 
-        self.category_list = [  { 
-                                    "name": "Flight",
-                                    "id": 10 
-                                },
-                                {
-                                    "name": "Turret",
-                                    "id": 20
-                                },
-                                {
-                                    "name": "Targeting",
-                                    "id": 30
-                                }]
         self.controls_list = [
             {
                 "category_id": 10,
+                "name": "Flight",
                 "values": [ 
                             { "name": "Pitch", "id": 11, "type": "axis", "vjoy": 1, "axis": 2},
                             { "name": "Yaw", "id": 21, "type": "axis", "vjoy": 1, "axis": 3 },
@@ -491,6 +488,7 @@ class ControlsSelector(QtWidgets.QWidget):
             },
             {
                 "category_id": 20,
+                "name": "Turret",
                 "values": [ 
                             { "name": "Recenter", "id": 12, "type": "button", "vjoy": 1, "button": 1 },
                             { "name": "Fire Mode", "id": 22, "type": "button", "vjoy": 1, "button": 2  },
@@ -499,6 +497,7 @@ class ControlsSelector(QtWidgets.QWidget):
             },
             {
                 "category_id": 30,
+                "name": "Targeting",
                 "values": [ 
                             { "name": "Pin Selected", "id": 15, "type": "button", "vjoy": 1, "button": 4 },
                             { "name": "Cycle Selection", "id": 25, "type": "button", "vjoy": 1, "button": 5 },
@@ -508,39 +507,42 @@ class ControlsSelector(QtWidgets.QWidget):
         ]
 
         self.category_dropdown = None
-        self.controls_dropdown = None
-        self.category_registry = []
-        self.controls_registry = []
+        self.controls_dropdown = []
+        self._category_registry = []
+        self._controls_registry = []
 
-        self._create_category_dropdown()
         self._create_controls_dropdown()
 
     def get_selection(self):
+        gremlin.util.log("ControlsSelector::get selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         category_id = None
         controls_id = None
         input_type = None
         vjoy_device_id = None
         vjoy_input_id = None
 
-        if (self.category_dropdown != None):
-            category_id = self.category_list[self.category_dropdown.currentIndex()]["id"]
-        if (self.controls_dropdown != None):
-            control_index = self.controls_dropdown[self.category_dropdown.currentIndex()].currentIndex()
-            control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
-            controls_id = control["values"][control_index]["id"]
-            vjoy_device_id = control["values"][control_index]["vjoy"]
-            vjoy_input_type = control["values"][control_index]["type"]
-            if "axis" in vjoy_input_type:
-                vjoy_input_id = control["values"][control_index]["axis"]
-            elif "button" in vjoy_input_type:
-                vjoy_input_id = control["values"][control_index]["button"]
-            elif "hat" in vjoy_input_type:
-                vjoy_input_id = control["values"][control_index]["hat"]
-            elif "keyboard" in vjoy_input_type:
-                vjoy_input_id = control["values"][control_index]["keyboard"]
+        # Retrieve the IDs for the category and control
+        category_id = self._category_registry[self.category_dropdown.currentIndex()]
+        control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
+        control_index = self.controls_dropdown[self.category_dropdown.currentIndex()].currentIndex()
+        controls_id = control["values"][control_index]["id"]
+
+        # Fill in the vjoy fields based on the selected category and control
+        vjoy_device_id = control["values"][control_index]["vjoy"]
+        vjoy_input_type = control["values"][control_index]["type"]
+        if "axis" in vjoy_input_type:
+            vjoy_input_id = control["values"][control_index]["axis"]
+        elif "button" in vjoy_input_type:
+            vjoy_input_id = control["values"][control_index]["button"]
+        elif "hat" in vjoy_input_type:
+            vjoy_input_id = control["values"][control_index]["hat"]
+        elif "keyboard" in vjoy_input_type:
+            vjoy_input_id = control["values"][control_index]["keyboard"]
          
         input_type = self.valid_types[0]
-        description = self.category_list[self.category_dropdown.currentIndex()]["name"] + " - " + self.controls_list[self.category_dropdown.currentIndex()]["values"][control_index]["name"]
+        category_entry = next((x for x in self.controls_list if x["category_id"] == category_id), None) 
+        control_entry = next((x for x in category_entry["values"] if x["id"] == controls_id), None)         
+        description = category_entry["name"] + " - " + control_entry["name"]
 
         return {
             "category_id": category_id,
@@ -552,7 +554,8 @@ class ControlsSelector(QtWidgets.QWidget):
         }
 
     def set_selection(self, input_type, category_id, controls_id):
-        if category_id not in self.category_registry:
+        gremlin.util.log("ControlsSelector::set selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
+        if category_id not in self._category_registry:
             return
 
         control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
@@ -560,7 +563,7 @@ class ControlsSelector(QtWidgets.QWidget):
             return
 
         # # Get the index of the combo box associated with this category
-        category_index = [index for (index, category) in enumerate(self.category_registry) if category == category_id][0]
+        category_index = [index for (index, category) in enumerate(self._category_registry) if category == category_id][0]
 
         # Select and display correct combo boxes and entries within
         self.category_dropdown.setCurrentIndex(category_index)
@@ -575,57 +578,73 @@ class ControlsSelector(QtWidgets.QWidget):
         self.controls_dropdown[category_index].setVisible(True)
 
     def _update_category(self, index):
+        gremlin.util.log("ControlsSelector::update category: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         # Hide all selection dropdowns
         for entry in self.controls_dropdown:
             entry.setVisible(False)
 
-        # Show correct dropdown
+        # Show the first item in the new category
         self.controls_dropdown[index].setVisible(True)
         self.controls_dropdown[index].setCurrentIndex(0)
         self._execute_callback()
 
 
-    def _create_category_dropdown(self):
-        self.category_dropdown = QtWidgets.QComboBox(self)
-        for category in self.category_list:
-            self.category_dropdown.addItem(category["name"])
-            self.category_registry.append(category["id"])
-        self.main_layout.addWidget(self.category_dropdown)
-        self.category_dropdown.activated.connect(self._update_category)
-        
-
     def _create_controls_dropdown(self):
+        gremlin.util.log("ControlsSelector::create controls dropdown: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         self.controls_dropdown = []
-        self.controls_registry = []
+        self._controls_registry = []
+
+        # Prepare the registries (they hold IDs for combo boxes)
+        for category in self.controls_list:
+            self._category_registry.append(category["category_id"])
+
+        for category in self.controls_list:
+            self._controls_registry.append({ "category_id": category["category_id"], "values": [] })
+
+            for control in category["values"]:
+                if control["type"] == self.current_input_type:
+                    self._controls_registry[-1]["values"].append(control["id"])
+
+            if len(self._controls_registry[-1]["values"]) == 0:
+                self._category_registry.remove(category["category_id"])
+                self._controls_registry.pop()
+
+        # create the category dropdown widgets
+        self.label = QtWidgets.QLabel("Category:")
+        self.main_layout.addWidget(self.label)                
+        self.category_dropdown = QtWidgets.QComboBox(self)
+        for category_id in self._category_registry:
+            category = next((x for x in self.controls_list if x["category_id"] == category_id), None)
+            self.category_dropdown.addItem(category["name"])
+            self.main_layout.addWidget(self.category_dropdown)
+            self.category_dropdown.activated.connect(self._update_category)
 
         # Create controls selections for the category. Each selection
         # will be invisible unless it is selected as the active category
-        for category in self.category_list:
+        self.label = QtWidgets.QLabel("Control:")
+        self.main_layout.addWidget(self.label)               
+        for category in self._controls_registry:
             selection = QtWidgets.QComboBox(self)
-            selection.setMaxVisibleItems(20)
-            self.controls_registry.append({ "category_id": category["id"], "values": [] })
+            selection.setMaxVisibleItems(len(category["values"]))
             
             # Add items based on the controls type
-            max_col = 32
-            controls = next((x for x in self.controls_list if x["category_id"] == category["id"]), None)
-            for control in controls["values"]:
-                selection.addItem(control["name"])
-                self.controls_registry[-1]["values"].append(control["id"])
+            for control in category["values"]:
+                category_entry = next((x for x in self.controls_list if x["category_id"] == category["category_id"]), None) 
+                control_entry = next((x for x in category_entry["values"] if x["id"] == control), None) 
+                selection.addItem(control_entry["name"])
 
-            # Add the selection and hide it
+            # Add the controls selection and hide it
             selection.setVisible(False)
             selection.activated.connect(self._execute_callback)
             self.main_layout.addWidget(selection)
             self.controls_dropdown.append(selection)
-
             selection.currentIndexChanged.connect(self._execute_callback)
 
-        # Show the first entry by default
-        if len(self.controls_dropdown) > 0:
-            self.controls_dropdown[0].setVisible(True)
-   
+        # Choose first entry by default
+        self.controls_dropdown[0].setVisible(True)
 
     def _execute_callback(self):
+        gremlin.util.log("ControlsSelector::execute callback: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         self.change_cb(self.get_selection())
 
 version = 1
