@@ -108,7 +108,7 @@ class InputItemConfiguration(QtWidgets.QFrame):
         )
         self.description_field = QtWidgets.QLineEdit()
         self.description_field.setText(self.item_data.description)
-        self.description_field.textEdited.connect(self._edit_description_cb)
+        self.description_field.textChanged.connect(self._edit_description_cb)
         self.description_layout.addWidget(self.description_field)
 
         # Allow description to be changed from an input item
