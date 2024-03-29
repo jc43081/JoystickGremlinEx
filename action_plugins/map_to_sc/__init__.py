@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys, os
+sys.path.append(os.path.join(os.path.dirname(__file__)))
+import mapping_reader
 
 import logging
 import threading
@@ -31,7 +34,6 @@ from gremlin.profile import safe_format, safe_read
 import gremlin.ui.common
 import gremlin.ui.input_item
 import gremlin.ui.device_tab
-
 
 class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
@@ -85,7 +87,8 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         }
         self.controls_selector = ScControlsSelector(
             lambda x: self.save_controls_changes(),
-            input_types[self._get_input_type()]
+            input_types[self._get_input_type()],
+            self.action_data.settings
         )
         self.main_layout.addWidget(self.controls_selector)
 
@@ -306,7 +309,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
     """Action remapping physical joystick inputs to Game-defined inputs."""
 
-    name = "Map To SC"
+    name = "Map To Star Citizen"
     tag = "map-to-sc"
 
     default_button_activation = (True, True)
@@ -339,6 +342,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         self.category_id = None
         self.controls_id = None
         self.parent_input_item = parent.parent
+        self.settings = parent.get_settings()
 
     def icon(self):
         """Returns the icon corresponding to the remapped input.
@@ -414,7 +418,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         :return XML node containing the action's data
         """
         gremlin.util.log("MapToSC::generate xml " + time.strftime("%a, %d %b %Y %H:%M:%S"))
-        node = ElementTree.Element("maptosc")
+        node = ElementTree.Element("map-to-sc")
         node.set("vjoy", str(self.vjoy_device_id))
         if self.input_type == InputType.Keyboard:
             node.set(
@@ -455,7 +459,7 @@ class ScControlsSelector(QtWidgets.QWidget):
         Controls will be mapped to proper vJoy Device and Input
     """
 
-    def __init__(self, change_cb, valid_types, parent=None):
+    def __init__(self, change_cb, valid_types, settings, parent=None):
         super().__init__(parent)
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
@@ -476,35 +480,8 @@ class ScControlsSelector(QtWidgets.QWidget):
             self.current_input_type = "unknown"
         self.valid_types = valid_types
 
-        self.controls_list = [
-            {
-                "category_id": 10,
-                "name": "Flight",
-                "values": [ 
-                            { "name": "Pitch", "id": 11, "type": "axis", "vjoy": 1, "axis": 2},
-                            { "name": "Yaw", "id": 21, "type": "axis", "vjoy": 1, "axis": 3 },
-                            { "name": "Roll", "id": 31, "type": "axis", "vjoy": 1, "axis": 1 }
-                        ]
-            },
-            {
-                "category_id": 20,
-                "name": "Turret",
-                "values": [ 
-                            { "name": "Recenter", "id": 12, "type": "button", "vjoy": 1, "button": 1 },
-                            { "name": "Fire Mode", "id": 22, "type": "button", "vjoy": 1, "button": 2  },
-                            { "name": "Gyro", "id": 32, "type": "button", "vjoy": 1, "button": 3  }
-                        ]
-            },
-            {
-                "category_id": 30,
-                "name": "Targeting",
-                "values": [ 
-                            { "name": "Pin Selected", "id": 15, "type": "button", "vjoy": 1, "button": 4 },
-                            { "name": "Cycle Selection", "id": 25, "type": "button", "vjoy": 1, "button": 5 },
-                            { "name": "Lock Selected", "id": 35, "type": "button", "vjoy": 1, "button": 6 }
-                        ]
-            }
-        ]
+        reader = mapping_reader.ControlsMappingReader(settings.sc_controls_mapping)
+        self.controls_list = reader.getControlsMapping()
 
         self.category_dropdown = None
         self.controls_dropdown = []

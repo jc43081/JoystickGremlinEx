@@ -79,6 +79,9 @@ class ProfileSettingsWidget(QtWidgets.QWidget):
         # Default macro delay
         self.scroll_layout.addWidget(DefaultDelay(self.profile_settings))
 
+        # Default macro delay
+        self.scroll_layout.addWidget(ControlsMapping(self.profile_settings))
+
         # vJoy devices as inputs
         vjoy_as_input_widget = VJoyAsInputWidget(self.profile_settings)
         self.scroll_layout.addWidget(vjoy_as_input_widget)
@@ -203,6 +206,42 @@ class DefaultModeSelector(QtWidgets.QGroupBox):
             self.profile_data.startup_mode = None
         else:
             self.profile_data.startup_mode = self.dropdown.currentText()
+
+
+class ControlsMapping(QtWidgets.QGroupBox):
+
+    """Allows selecting the mode in which Gremlin starts."""
+
+    def __init__(self, profile_data, parent=None):
+        """Creates a new instance.
+
+        :param profile_data profile settings managed by the widget
+        :param parent the parent of this widget
+        """
+        super().__init__(parent)
+
+        self.profile_data = profile_data
+
+        self.main_layout = QtWidgets.QHBoxLayout(self)
+        self._create_ui()
+
+    def _create_ui(self):
+        """Creates the UI used to configure the Control Mapping."""
+        self.setTitle("Controls Mappings")
+
+        self.main_layout.addWidget(QtWidgets.QLabel("Star Citizen:"))
+        line_edit = QtWidgets.QLineEdit()
+        line_edit.setText(self.profile_data.sc_controls_mapping)
+        line_edit.textChanged.connect(self._update_cb)
+        self.main_layout.addWidget(line_edit)
+        self.main_layout.addStretch()
+
+    def _update_cb(self, text):
+        """Handles changes in the mode selection drop down.
+
+        :param index the index of the entry selected
+        """
+        self.profile_data.sc_controls_mapping = text
 
 
 class VJoyAxisDefaultsWidget(QtWidgets.QWidget):
