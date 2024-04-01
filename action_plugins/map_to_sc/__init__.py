@@ -28,7 +28,7 @@ from PySide6 import QtWidgets, QtCore
 
 from gremlin.base_classes import InputActionCondition
 from gremlin.common import InputType
-from gremlin import input_devices, joystick_handling, util
+from gremlin import input_devices, joystick_handling, util, keyboard
 from gremlin.error import ProfileError
 from gremlin.profile import safe_format, safe_read
 import gremlin.ui.common
@@ -222,6 +222,13 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         self.axis_delta_value = 0.0
         self.axis_value = 0.0
 
+        # Include keypresses to avoid mapping conflicts
+        keys = [ [29, True], [56, True] ]
+        self.release = gremlin.macro.Macro()
+        # Execute release in reverse order
+        for key in reversed(keys):
+            self.release.release(gremlin.macro.key_from_code(key[0], key[1]))        
+
     def process_event(self, event, value):
         if self.input_type == InputType.JoystickAxis:
             if self.axis_mode == "absolute":
@@ -244,6 +251,20 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
             if event.event_type in [InputType.JoystickButton, InputType.Keyboard] \
                     and event.is_pressed \
                     and self.needs_auto_release:
+                
+                # Press Keyboard Combo CTRL + ALT
+                if value.current:
+                    keyboard.send_key_down(keyboard.key_from_code(29, True))
+                    keyboard.send_key_down(keyboard.key_from_code(56, True))
+                    input_devices.ButtonReleaseActions().register_callback(
+                         lambda: gremlin.macro.MacroManager().queue_macro(self.release),
+                         event
+                    )
+                else:
+                    keyboard.send_key_up(keyboard.key_from_code(29, True))
+                    keyboard.send_key_up(keyboard.key_from_code(56, True))
+
+                # Release the Vjoy button
                 input_devices.ButtonReleaseActions().register_button_release(
                     (self.vjoy_device_id, self.vjoy_input_id),
                     event
