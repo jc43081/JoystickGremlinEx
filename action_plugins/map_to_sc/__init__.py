@@ -126,11 +126,11 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         if (self.action_data.category_id != None):
             category_id = self.action_data.category_id
         else:
-            category_id = self.controls_selector.controls_list[0]["category_id"]
+            category_id = self.controls_selector.controls_registry[0]["category_id"]
         if (self.action_data.controls_id != None):
             controls_id = self.action_data.controls_id
         else:
-            controls_id = self.controls_selector.controls_list[0]["values"][0]["id"]
+            controls_id = self.controls_selector.controls_registry[0]["values"][0]
 
         # Get the input type which can change depending on the container used
         input_type = self.action_data.input_type
@@ -184,9 +184,10 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.action_data.input_type = controls_data["input_type"]
             self.action_data.vjoy_device_id = controls_data["vjoy_device_id"]
             self.action_data.vjoy_input_id = controls_data["vjoy_input_id"]
-            self.action_data.parent_input_item.description = controls_data["description"]
-            el = gremlin.event_handler.EventListener()
-            el.action_description_changed.emit()
+            if self.action_data.parent_input_item.description != controls_data["description"]:
+                self.action_data.parent_input_item.description = controls_data["description"]
+                el = gremlin.event_handler.EventListener()
+                el.action_description_changed.emit()
 
             if self.action_data.input_type == InputType.JoystickAxis:
                 self.action_data.axis_mode = "absolute"
@@ -486,7 +487,7 @@ class ScControlsSelector(QtWidgets.QWidget):
         self.category_dropdown = None
         self.controls_dropdown = []
         self._category_registry = []
-        self._controls_registry = []
+        self.controls_registry = []
 
         self._create_controls_dropdown()
 
@@ -499,27 +500,33 @@ class ScControlsSelector(QtWidgets.QWidget):
         vjoy_input_id = None
 
         # Retrieve the IDs for the category and control
+        # First get the Category Id and corresponding control list from registry using the dropdown index
         category_id = self._category_registry[self.category_dropdown.currentIndex()]
-        control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
+        category_control_list = next((x for x in self.controls_registry if x["category_id"] == category_id), None)
+
+        # Then get the control Id using the control index from the dropdown (index is based on selected category)
         control_index = self.controls_dropdown[self.category_dropdown.currentIndex()].currentIndex()
-        controls_id = control["values"][control_index]["id"]
+        if control_index < 0: control_index = 0
+        controls_id = category_control_list["values"][control_index]
+
+        # Finally get the selected control from the controls list
+        category_entry = next((x for x in self.controls_list if x["category_id"] == category_id), None) 
+        control_entry = next((x for x in category_entry["values"] if x["id"] == controls_id), None)  
 
         # Fill in the vjoy fields based on the selected category and control
-        vjoy_device_id = control["values"][control_index]["vjoy"]
-        vjoy_input_type = control["values"][control_index]["type"]
+        vjoy_device_id = control_entry["vjoy"]
+        vjoy_input_type = control_entry["type"]
         if "axis" in vjoy_input_type:
-            vjoy_input_id = control["values"][control_index]["axis"]
+            vjoy_input_id = control_entry["axis"]
         elif "button" in vjoy_input_type:
-            vjoy_input_id = control["values"][control_index]["button"]
+            vjoy_input_id = control_entry["button"]
         elif "hat" in vjoy_input_type:
-            vjoy_input_id = control["values"][control_index]["hat"]
+            vjoy_input_id = control_entry["hat"]
         elif "keyboard" in vjoy_input_type:
-            vjoy_input_id = control["values"][control_index]["keyboard"]
+            vjoy_input_id = control_entry["keyboard"]
          
         input_type = self.valid_types[0]
-        category_entry = next((x for x in self.controls_list if x["category_id"] == category_id), None) 
-        control_entry = next((x for x in category_entry["values"] if x["id"] == controls_id), None)         
-        description = category_entry["name"] + " - " + control_entry["name"]
+        description =  control_entry["name"] + " [" + category_entry["name"] + "]"
 
         return {
             "category_id": category_id,
@@ -546,7 +553,8 @@ class ScControlsSelector(QtWidgets.QWidget):
         self.category_dropdown.setCurrentIndex(category_index)
 
         # Retrieve the index of the correct entry in the combobox
-        control_index = [index for (index, value) in enumerate(control["values"]) if value["id"] == controls_id][0]
+        category_control_list = next((x for x in self.controls_registry if x["category_id"] == category_id), None)
+        control_index = [index for (index, value) in enumerate(category_control_list["values"]) if value == controls_id][0]
 
         # Select and display correct combo boxes and entries within
         for entry in self.controls_dropdown:
@@ -569,22 +577,22 @@ class ScControlsSelector(QtWidgets.QWidget):
     def _create_controls_dropdown(self):
         gremlin.util.log("ControlsSelector::create controls dropdown: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         self.controls_dropdown = []
-        self._controls_registry = []
+        self.controls_registry = []
 
         # Prepare the registries (they hold IDs for combo boxes)
         for category in self.controls_list:
             self._category_registry.append(category["category_id"])
 
         for category in self.controls_list:
-            self._controls_registry.append({ "category_id": category["category_id"], "values": [] })
+            self.controls_registry.append({ "category_id": category["category_id"], "values": [] })
 
             for control in category["values"]:
                 if control["type"] == self.current_input_type:
-                    self._controls_registry[-1]["values"].append(control["id"])
+                    self.controls_registry[-1]["values"].append(control["id"])
 
-            if len(self._controls_registry[-1]["values"]) == 0:
+            if len(self.controls_registry[-1]["values"]) == 0:
                 self._category_registry.remove(category["category_id"])
-                self._controls_registry.pop()
+                self.controls_registry.pop()
 
         # create the category dropdown widgets
         self.label = QtWidgets.QLabel("Category:")
@@ -600,7 +608,7 @@ class ScControlsSelector(QtWidgets.QWidget):
         # will be invisible unless it is selected as the active category
         self.label = QtWidgets.QLabel("Control:")
         self.main_layout.addWidget(self.label)               
-        for category in self._controls_registry:
+        for category in self.controls_registry:
             selection = QtWidgets.QComboBox(self)
             selection.setMaxVisibleItems(len(category["values"]))
             
