@@ -583,6 +583,12 @@ class AbstractAction(profile.ProfileData):
         )
 
 
+    def clean_up(self):
+        """ Allows for an action to clean up before being deleted
+
+        """
+        pass
+
 class AbstractContainer(profile.ProfileData):
 
     """Base class for action container related information storage."""

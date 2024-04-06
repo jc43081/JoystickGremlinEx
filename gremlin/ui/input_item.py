@@ -409,6 +409,7 @@ class ActionSetModel(common.AbstractModel):
 
     def remove_action(self, action):
         if action in self._action_set:
+            action.clean_up()
             del self._action_set[self._action_set.index(action)]
         self.data_changed.emit()
 

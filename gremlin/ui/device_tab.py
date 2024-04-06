@@ -241,6 +241,9 @@ class ActionContainerModel(common.AbstractModel):
         :param container the container instance to remove
         """
         if container in self._containers:
+            for action_list in container.action_sets:
+                for action in action_list:
+                    action.clean_up()
             del self._containers[self._containers.index(container)]
         self.data_changed.emit()
 
