@@ -29,7 +29,7 @@ from PySide6 import QtWidgets, QtCore
 from gremlin.base_classes import InputActionCondition
 from gremlin.common import InputType
 from gremlin import input_devices, joystick_handling, util, keyboard
-from gremlin.error import ProfileError
+from gremlin.error import ProfileError, GremlinError
 from gremlin.profile import safe_format, safe_read
 import gremlin.ui.common
 import gremlin.ui.input_item
@@ -184,6 +184,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.action_data.input_type = controls_data["input_type"]
             self.action_data.vjoy_device_id = controls_data["vjoy_device_id"]
             self.action_data.vjoy_input_id = controls_data["vjoy_input_id"]
+            self.action_data.description = controls_data["description"]
             if self.action_data.parent_input_item.description != controls_data["description"]:
                 self.action_data.parent_input_item.description = controls_data["description"]
                 el = gremlin.event_handler.EventListener()
@@ -252,7 +253,7 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                     and event.is_pressed \
                     and self.needs_auto_release:
                 
-                # Press Keyboard Combo CTRL + ALT
+                # Press Keyboard Combo - Right CTRL + Right ALT
                 if value.current:
                     keyboard.send_key_down(keyboard.key_from_code(29, True))
                     keyboard.send_key_down(keyboard.key_from_code(56, True))
@@ -365,6 +366,15 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         self.controls_id = None
         self.parent_input_item = parent.parent
         self.settings = parent.get_settings()
+        self.description = ""
+
+
+    def clean_up(self):
+        if self.parent_input_item.description == self.description:
+            self.parent_input_item.description = ""
+            el = gremlin.event_handler.EventListener()
+            el.action_description_changed.emit()
+    
 
     def icon(self):
         """Returns the icon corresponding to the remapped input.
@@ -625,26 +635,32 @@ class ScControlsSelector(QtWidgets.QWidget):
             self.main_layout.addWidget(self.category_dropdown)
             self.category_dropdown.activated.connect(self._update_category)
 
-        # Create controls selections for the category. Each selection
-        # will be invisible unless it is selected as the active category
-        self.label = QtWidgets.QLabel("Control:")
-        self.main_layout.addWidget(self.label)               
-        for category in self.controls_registry:
-            selection = QtWidgets.QComboBox(self)
-            selection.setMaxVisibleItems(len(category["values"]))
-            
-            # Add items based on the controls type
-            for control in category["values"]:
-                category_entry = next((x for x in self.controls_list if x["category_id"] == category["category_id"]), None) 
-                control_entry = next((x for x in category_entry["values"] if x["id"] == control), None) 
-                selection.addItem(control_entry["name"])
+        try:
+            # Create controls selections for the category. Each selection
+            # will be invisible unless it is selected as the active category
+            self.label = QtWidgets.QLabel("Control:")
+            self.main_layout.addWidget(self.label)               
+            for category in self.controls_registry:
+                selection = QtWidgets.QComboBox(self)
+                selection.setMaxVisibleItems(len(category["values"]))
+                
+                # Add items based on the controls type
+                for control in category["values"]:
+                    category_entry = next((x for x in self.controls_list if x["category_id"] == category["category_id"]), None) 
+                    control_entry = next((x for x in category_entry["values"] if x["id"] == control), None) 
+                    selection.addItem(control_entry["name"])
 
-            # Add the controls selection and hide it
-            selection.setVisible(False)
-            selection.activated.connect(self._execute_callback)
-            self.main_layout.addWidget(selection)
-            self.controls_dropdown.append(selection)
-            selection.currentIndexChanged.connect(self._execute_callback)
+                # Add the controls selection and hide it
+                selection.setVisible(False)
+                selection.activated.connect(self._execute_callback)
+                self.main_layout.addWidget(selection)
+                self.controls_dropdown.append(selection)
+                selection.currentIndexChanged.connect(self._execute_callback)
+        except:
+            util.display_error("Controls Mapping is invalid. Please check the file and restart Joystick Gremlin.")
+            raise GremlinError(
+                "Unable to build Controls Dropdown. Failed on: Category - " + str(category["category_id"])
+            )
 
         # Choose first entry by default
         self.controls_dropdown[0].setVisible(True)
