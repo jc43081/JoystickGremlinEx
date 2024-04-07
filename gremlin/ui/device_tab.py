@@ -612,7 +612,8 @@ class KeyboardDeviceTabWidget(QtWidgets.QWidget):
         if item is not None and item.widget():
             item.widget().hide()
             item.widget().deleteLater()
-        self.main_layout.removeItem(item)
+        if item:
+            self.main_layout.removeItem(item)
 
         # Create new configuration widget
         widget = InputItemConfiguration(item_data)
@@ -688,11 +689,8 @@ class KeyboardDeviceTabWidget(QtWidgets.QWidget):
         """
         return lambda: self.input_item_list_view.redraw_index(index)
 
-    def mode_changed_cb(self, mode):
-        """Handles mode change.
-
-        :param mode the new mode
-        """
+    def set_mode(self, mode):
+        ''' changes the mode of the tab '''        
         self.current_mode = mode
         self.device_profile.ensure_mode_exists(self.current_mode)
         self.input_item_list_model.mode = mode
@@ -702,7 +700,16 @@ class KeyboardDeviceTabWidget(QtWidgets.QWidget):
         if item is not None and item.widget():
             item.widget().hide()
             item.widget().deleteLater()
-        self.main_layout.removeItem(item)
+        if item:
+            self.main_layout.removeItem(item)
+
+    def mode_changed_cb(self, mode):
+        """Handles mode change.
+
+        :param mode the new mode
+        """
+        self.set_mode(mode)
+
 
     def refresh(self):
         """Refreshes the current selection, ensuring proper synchronization."""
