@@ -224,7 +224,9 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         self.axis_value = 0.0
 
         # Include keypresses to avoid mapping conflicts
-        keys = [ [29, True], [56, True] ]
+        self.ralt = keyboard.g_name_to_key['rightalt']
+        self.rctrl = keyboard.g_name_to_key['rightcontrol']
+        keys = [ [self.ralt.scan_code, self.ralt.is_extended], [self.rctrl.scan_code, self.rctrl.is_extended ] ]
         self.release = gremlin.macro.Macro()
         # Execute release in reverse order
         for key in reversed(keys):
@@ -255,15 +257,15 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                 
                 # Press Keyboard Combo - Right CTRL + Right ALT
                 if value.current:
-                    keyboard.send_key_down(keyboard.key_from_code(29, True))
-                    keyboard.send_key_down(keyboard.key_from_code(56, True))
+                    keyboard.send_key_down(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
+                    keyboard.send_key_down(keyboard.key_from_code(self.rctrl.scan_code, self.rctrl.is_extended))
                     input_devices.ButtonReleaseActions().register_callback(
                          lambda: gremlin.macro.MacroManager().queue_macro(self.release),
                          event
                     )
                 else:
-                    keyboard.send_key_up(keyboard.key_from_code(29, True))
-                    keyboard.send_key_up(keyboard.key_from_code(56, True))
+                    keyboard.send_key_up(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
+                    keyboard.send_key_up(keyboard.key_from_code(self.rctrl.scan_code,  self.rctrl.is_extended))
 
                 # Release the Vjoy button
                 input_devices.ButtonReleaseActions().register_button_release(
