@@ -589,7 +589,7 @@ class ProfileConverter:
 
         root.attrib["version"] = "7"
         for module in root.findall("import/module"):
-            module.attrib["name"] = os.path.normpath("{}\{}.py".format(
+            module.attrib["name"] = os.path.normpath("{}\\{}.py".format(
                 base_path,
                 module.attrib["name"]
             ))
@@ -1215,7 +1215,7 @@ class Settings:
         self.vjoy_initial_values = {}
         self.startup_mode = None
         self.default_delay = 0.05
-        self.sc_controls_mapping = ""
+        self.sc_controls_mapping = ".\controls_mapping\StarCitizenControlsMapping-3.22.1.json"
 
     def to_xml(self):
         """Returns an XML node containing the settings.
