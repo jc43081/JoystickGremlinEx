@@ -15,7 +15,9 @@ This custom version adds to release 13.3 of Gremlin:
 - Remote data control of another GremlinEx client on the local network
 - OSC message handling (for touch screen support going to Gremlin via TouchOSC for example)
 - VjoyRemap plugin for control  
-- MapToMouseEx plugin for enhanced mouse control  
+- MapToMouseEx plugin for enhanced mouse control
+- MaptoSC plugin for mapping directly to Star Citizen controls
+  - For instructions on this Action, visit [SC Control Mapper on Nexus](https://www.nexusmods.com/starcitizen/mods/23)
 
 
 I suggest you make VjoyRemap the default action in the options panel as this plugin is what provides many enhancements over the default Remap plugin.  Same for mouse output - MapToMouseEx provides enhanced options for the mouse macro functions.
