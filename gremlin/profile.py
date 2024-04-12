@@ -1215,7 +1215,7 @@ class Settings:
         self.vjoy_initial_values = {}
         self.startup_mode = None
         self.default_delay = 0.05
-        self.sc_controls_mapping = ".\controls_mapping\StarCitizenControlsMapping-3.22.1.json"
+        self.sc_controls_mapping = ".\\controls_mapping\\StarCitizenControlsMapping-3.22.1.json"
 
     def to_xml(self):
         """Returns an XML node containing the settings.

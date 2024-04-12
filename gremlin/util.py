@@ -216,7 +216,7 @@ def valid_python_identifier(name):
     :param name the name to check for validity
     :return True if the name is a valid identifier, False otherwise
     """
-    return re.match("^[^\d\W]\w*\Z", name) is not None
+    return re.match("^[^\\d\\W]\\w*\\Z", name) is not None
 
 
 def clamp(value, min_val, max_val):
