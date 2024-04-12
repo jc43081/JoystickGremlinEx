@@ -18,6 +18,10 @@ for root, _, files in os.walk("container_plugins"):
         if fname.endswith(".pyc"):
             continue
         container_plugins_files.append((os.path.join(root, fname), root))
+controls_mappings_files = []
+for root, _, files in os.walk("controls_mappings"):
+    for fname in files:
+        controls_mappings_files.append((os.path.join(root, fname), root))
 
 added_files = [
     ("about", "about"),
@@ -26,6 +30,7 @@ added_files = [
 ]
 added_files.extend(action_plugins_files)
 added_files.extend(container_plugins_files)
+added_files.extend(controls_mappings_files)
 added_binaries = [
     ("vjoy/vJoyInterface.dll", "."),
     ("dill/dill.dll", "."),
@@ -33,7 +38,7 @@ added_binaries = [
 
 a = Analysis(
     ["joystick_gremlin.py"],
-    pathex=['C:\\Users\\Ivan Dolvich\\PycharmProjects\\JoystickGremlin'],
+    pathex=['.'],
     binaries=added_binaries,
     datas=added_files,
     hiddenimports=[],
@@ -60,7 +65,8 @@ exe = EXE(
     strip=None,
     upx=True,
     console=False,
-    icon="gfx\\icon.ico"
+    icon="gfx\\icon.ico",
+    contents_directory='.'
 )
 
 coll = COLLECT(
