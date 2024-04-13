@@ -1,4 +1,19 @@
-Joystick Gremlin EX
+Joystick Gremlin SC - 13.40.7-sc
+================
+
+Joystick Gremlin SC is a customized version of Joystick Gremlin Ex. It is a trial version for mapping game controls directly within Joystick Gremlin and then providing associated mapping files for the game. In this case, the game is Star Citizen. If this version is heavily used (or there is desire expressed to support other games), the mapping functionality will be incorporated back into the Ex version for use by all. 
+
+In the meantime, this version will incorporate changes made to Ex as they are made and it is reasonable to do so. Therefore, it's versioning will continue to match, but it will be a separate install.
+
+SC Added Features
+-----------
+- MaptoSC plugin for mapping directly to Star Citizen controls
+  - For instructions on using this plugin, visit [SC Controls Mapper on Nexus](https://www.nexusmods.com/starcitizen/mods/23)
+
+
+<hr style="border:3px solid gray">
+
+Joystick Gremlin Ex
 ================
 
 ## Changelog
@@ -20,9 +35,6 @@ This custom version adds to release 13.3 of Gremlin:
 - OSC message handling (for touch screen support going to Gremlin via TouchOSC for example)
 - VjoyRemap plugin for control  
 - MapToMouseEx plugin for enhanced mouse control
-- MaptoSC plugin for mapping directly to Star Citizen controls
-  - For instructions on this plugin, visit [SC Controls Mapper on Nexus](https://www.nexusmods.com/starcitizen/mods/23)
-
 
 I suggest you make VjoyRemap the default action in the options panel as this plugin is what provides many enhancements over the default Remap plugin.  Same for mouse output - MapToMouseEx provides enhanced options for the mouse macro functions.
 
