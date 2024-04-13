@@ -85,7 +85,7 @@ def create_folder_structure(folder_list):
     # Create the basic structure for where to place the actual files
     structure["root"] = create_node(
         "StandardDirectory",
-        {"Id": "ProgramFilesFolder"}
+        {"Id": "AppDataFolder"}
     )
     structure["h2ik"] = create_node(
         "Directory",
