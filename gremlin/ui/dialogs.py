@@ -817,9 +817,11 @@ class AboutUi(common.BaseDialogUi):
             "about/modernuiicons.html",
             "about/pyqt.html",
             "about/pywin32.html",
-            "about/qt5.html",
+            "about/qt6.html",
             "about/reportlab.html",
             "about/vjoy.html",
+            "about/msgpack.html",
+            "about/dill.html"
         ]
         third_party_licenses = ""
         for fname in license_list:
