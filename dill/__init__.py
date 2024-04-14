@@ -388,8 +388,8 @@ C_EVENT_CALLBACK = ctypes.CFUNCTYPE(None, _JoystickInputData)
 C_DEVICE_CHANGE_CALLBACK = ctypes.CFUNCTYPE(None, _DeviceSummary, ctypes.c_uint8)
 
 _dll_path = os.path.join(os.path.dirname(__file__), "dill.dll")
-if not os.path.isfile(_dll_path):
-    raise ImportError(f"Error: Missing dil.dll: {_dll_path}")
+# if not os.path.isfile(_dll_path):
+#     raise ImportError(f"Error: Missing dil.dll: {_dll_path}")
 
 _di_listener_dll = ctypes.cdll.LoadLibrary(_dll_path)
 
