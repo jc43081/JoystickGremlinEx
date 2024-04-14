@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Joystick Gremlin Ex",
+            "name": "Python: Joystick Gremlin SC",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/joystick_gremlin.py",
