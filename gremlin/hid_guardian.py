@@ -249,7 +249,7 @@ class HidGuardian:
         # Ensure the process key exists and write the identifying value
         handle = winreg.CreateKey(
             winreg.HKEY_LOCAL_MACHINE,
-            f"{HidGuardian.process_path}\{process_id}"
+            f"{HidGuardian.process_path}\\{process_id}"
         )
         winreg.SetValueEx(handle, "Joystick Gremlin", 0, winreg.REG_DWORD, 1)
         self._synchronize_process(process_id)
@@ -309,7 +309,7 @@ class HidGuardian:
             gremlin_pids = []
             for i in range(info[0]):
                 sub_key = winreg.EnumKey(handle, i)
-                sub_handle = _open_key(f"{HidGuardian.process_path}\{sub_key}")
+                sub_handle = _open_key(f"{HidGuardian.process_path}\\{sub_key}")
                 winreg.OpenKey(handle, sub_key)
                 sub_info = winreg.QueryInfoKey(sub_handle)
                 # Check each sub key value
@@ -340,7 +340,7 @@ class HidGuardian:
 
         # Write the same data to the process exemption list
         handle = _open_key(
-            f"{HidGuardian.process_path}\{process_id}",
+            f"{HidGuardian.process_path}\\{process_id}",
             access=winreg.KEY_WRITE
         )
         _write_value(handle, HidGuardian.storage_value, data)
