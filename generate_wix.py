@@ -226,13 +226,12 @@ def create_document():
             #"Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
             #"Id": "7cdb8375-66a1-4114-be79-b17027e8c0df", # 13.40.7ex
             #"Id": "739095a7-19cc-4154-ac9c-c51f5f516527", # 13.40.8ex
-            "Id": "654c694d-753c-4ec1-8a8d-8a0f2f3133d8", # 13.40.9ex
-            # "Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
-            "ProductCode": "81b0f529-22eb-465a-a459-b20d06a162dc", # 13.40.7-sc
+            "ProductCode": "ac4565b4-1eec-46bc-b1b0-b927e24a0ba2", # 13.40.9-sc
             "UpgradeCode": "1f5d614b-6cec-47d8-90e3-40f7e7458f7a",
             "Language": "1033",
             "Codepage": "1252",
-            "Version": "13.40.9ex"
+            "Version": "13.40.9-sc",
+            "InstallerVersion": "100"
         })
     
     # also change version number in joystick_gremlin.py line 60 APPLICATION_VERSION
