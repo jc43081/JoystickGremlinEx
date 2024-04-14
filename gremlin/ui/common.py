@@ -40,7 +40,7 @@ class ContainerViewTypes(enum.Enum):
             return _ContainerView_to_string_lookup[value]
         except KeyError:
             raise gremlin.error.GremlinError(
-                "Invalid type in container lookup, {}".format(value)
+                f"Invalid type in container lookup, {value}"
             )
 
     @staticmethod
@@ -49,7 +49,7 @@ class ContainerViewTypes(enum.Enum):
             return _ContainerView_to_enum_lookup[value]
         except KeyError:
             raise gremlin.error.GremlinError(
-                "Invalid type in container lookup, {}".format(value)
+                f"Invalid type in container lookup, {value}"
             )
 
 
@@ -224,8 +224,8 @@ class DynamicDoubleSpinBox(QtWidgets.QDoubleSpinBox):
 
             # Convert number to a string representation we can convert to
             # a float so we can truncate the decimal places as required
-            value_string = "{}.{}".format(parts[0], parts[1])
-            format_string = "{{:.{:d}f}}".format(self.decimals())
+            value_string = f"{parts[0]}.{parts[1]}"
+            format_string = f"{{:.{self.decimals():d}f}}"
             value_string = format_string.format(float(value_string))
 
             # Use decimal place separator dictated by the locale settings
@@ -601,20 +601,32 @@ class AbstractInputSelector(QtWidgets.QWidget):
         entry_id = self.input_item_dropdowns[dev_id].findText(input_name)
 
         # Select and display correct combo boxes and entries within
-        self.device_dropdown.setCurrentIndex(dev_id)
-        for entry in self.input_item_dropdowns:
-            entry.setVisible(False)
-        self.input_item_dropdowns[dev_id].setVisible(True)
-        self.input_item_dropdowns[dev_id].setCurrentIndex(entry_id)
+        with QtCore.QSignalBlocker(self.device_dropdown):
+            self.device_dropdown.setCurrentIndex(dev_id)
+
+            
+            for entry in self.input_item_dropdowns:
+                with QtCore.QSignalBlocker(entry):
+                    entry.setVisible(False)
+
+            entry = self.input_item_dropdowns[dev_id]
+            with QtCore.QSignalBlocker(entry):
+                entry.setVisible(True)
+                entry.setCurrentIndex(entry_id)
 
     def _update_device(self, index):
         # Hide all selection dropdowns
-        for entry in self.input_item_dropdowns:
-            entry.setVisible(False)
 
-        # Show correct dropdown
-        self.input_item_dropdowns[index].setVisible(True)
-        self.input_item_dropdowns[index].setCurrentIndex(0)
+        with QtCore.QSignalBlocker(self.input_item_dropdowns):
+            for entry in self.input_item_dropdowns:
+                with QtCore.QSignalBlocker(entry):
+                    entry.setVisible(False)
+
+            # Show correct dropdown
+            entry = self.input_item_dropdowns[index]
+            with QtCore.QSignalBlocker(entry):
+                entry.setVisible(True)
+                entry.setCurrentIndex(0)
         self._execute_callback()
 
     def _initialize(self):
@@ -778,7 +790,7 @@ class VJoySelector(AbstractInputSelector):
                 self.device_list.append(dev)
 
     def _format_device_name(self, device):
-        return "vJoy Device {:d}".format(device.vjoy_id)
+        return f"vJoy Device {device.vjoy_id:d}"
 
     def _device_identifier(self, device):
         return device.vjoy_id
@@ -956,11 +968,8 @@ class ModeWidget(QtWidgets.QWidget):
         :param level the indentation level of this tree
         """
         for mode, children in sorted(tree.items()):
-            labels.append((mode, "{}{}{}".format(
-                "  " * level,
-                "" if level == 0 else " ",
-                mode
-            )))
+            labels.append((mode, 
+                f"{"  " * level}{"" if level == 0 else " "}{mode}"))
             self._inheritance_tree_to_labels(labels, children, level+1)
 
     def _create_widget(self):
@@ -1031,13 +1040,9 @@ class InputListenerWidget(QtWidgets.QFrame):
 
         # Create and configure the ui overlay
         self.main_layout = QtWidgets.QVBoxLayout(self)
-        self.main_layout.addWidget(QtWidgets.QLabel(
-            """<center>Please press the desired {}.
-            <br/><br/>
-            Hold ESC for one second to abort.</center>""".format(
-                self._valid_event_types_string()
-            )
-        ))
+        self.main_layout.addWidget(
+            QtWidgets.QLabel(f"""<center>Please press the desired {self._valid_event_types_string()}.<br/><br/>Hold ESC for one second to abort.</center>""")
+        )
 
         self.setWindowModality(QtCore.Qt.ApplicationModal)
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)

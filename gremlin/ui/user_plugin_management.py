@@ -19,6 +19,7 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
+from gremlin.theme import ThemeQIcon
 from gremlin.common import PluginVariableType
 import gremlin.profile
 import gremlin.user_plugin
@@ -147,10 +148,7 @@ class ModuleManagementController(QtCore.QObject):
             else:
                 logging.getLogger("system").error(
                     "Invalid variable type encountered in user "
-                    "plugin {} : {}".format(
-                        instance.parent.file_name,
-                        var.label
-                    )
+                    f"plugin {instance.parent.file_name} : {var.label}"
                 )
                 layout.addWidget(QtWidgets.QLabel(var.label))
         layout.addStretch()
@@ -170,18 +168,14 @@ class ModuleManagementController(QtCore.QObject):
         elif variable.type == PluginVariableType.PhysicalInput:
             variable.value = data
             button = widget.itemAtPosition(0, 1).widget()
-            input_id = "{:d}".format(data["input_id"])
+            input_id = f"{data["input_id"]:d}"
             if data["input_type"] == gremlin.common.InputType.JoystickAxis:
                 input_id = gremlin.common.AxisNames.to_string(
                     gremlin.common.AxisNames(data["input_id"])
                 )
-            button.setText("{} {} {}".format(
-                data["device_name"],
-                gremlin.common.InputType.to_string(
-                    data["input_type"]
-                ).capitalize(),
-                input_id
-            ))
+            button.setText(
+                f"{data["device_name"]} {gremlin.common.InputType.to_string(data["input_type"]).capitalize()} {input_id}"
+                )
 
         variable.is_valid = True
 
@@ -257,7 +251,7 @@ class ModuleManagementView(QtWidgets.QSplitter):
 
         # Button to add a new module
         self.btn_add_module = QtWidgets.QPushButton(
-            QtGui.QIcon("gfx/list_add.svg"), "Add Plugin"
+            ThemeQIcon("gfx/list_add.svg"), "Add Plugin"
         )
         self.btn_add_module.clicked.connect(self._prompt_user_for_module)
 
@@ -348,13 +342,13 @@ class ModuleWidget(QtWidgets.QFrame):
 
         if self.has_variables:
             self.btn_add_instance = QtWidgets.QPushButton(
-                QtGui.QIcon("gfx/button_add"),
+                ThemeQIcon("gfx/button_add"),
                 ""
             )
             header_layout.addWidget(self.btn_add_instance)
 
         self.btn_delete = QtWidgets.QPushButton(
-            QtGui.QIcon("gfx/button_delete"),
+            ThemeQIcon("gfx/button_delete"),
             ""
         )
         header_layout.addWidget(self.btn_delete)
@@ -395,14 +389,14 @@ class InstanceWidget(QtWidgets.QWidget):
         self.label_name = QtWidgets.QLabel(self.name)
 
         self.btn_rename = QtWidgets.QPushButton(
-            QtGui.QIcon("gfx/button_edit"), ""
+            ThemeQIcon("gfx/button_edit"), ""
         )
         self.btn_rename.clicked.connect(self.rename_instance)
         self.btn_configure = QtWidgets.QPushButton(
-            QtGui.QIcon("gfx/options"), ""
+            ThemeQIcon("gfx/options"), ""
         )
         self.btn_delete = QtWidgets.QPushButton(
-            QtGui.QIcon("gfx/button_delete"), ""
+            ThemeQIcon("gfx/button_delete"), ""
         )
 
         self.main_layout.addWidget(self.label_name)

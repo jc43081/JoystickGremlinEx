@@ -767,7 +767,7 @@ class AbstractContainer(profile.ProfileData):
                 self.action_sets.append(action_set)
             else:
                 logging.getLogger("system").warning(
-                    "Unknown node present: {}".format(child.tag)
+                    f"Unknown node present: {child.tag}"
                 )
 
     def _parse_action_xml(self, node, action_set):
@@ -783,7 +783,7 @@ class AbstractContainer(profile.ProfileData):
 
             if child.tag not in action_name_map:
                 logging.getLogger("system").warning(
-                    "Unknown node present: {}".format(child.tag)
+                    f"Unknown node present: {child.tag}"
                 )
                 continue
 

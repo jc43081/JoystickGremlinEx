@@ -39,10 +39,13 @@ import gremlin.event_handler
 
 import dill
 
+
 # Figure out the location of the code / executable and change the working
 # directory accordingly
 install_path = os.path.normcase(os.path.dirname(os.path.abspath(sys.argv[0])))
 os.chdir(install_path)
+
+from gremlin.theme import ThemeQIcon
 
 import gremlin.ui.axis_calibration
 import gremlin.ui.common
@@ -59,8 +62,8 @@ from PySide6 import QtCore
 from gremlin.ui.ui_gremlin import Ui_Gremlin
 from gremlin.input_devices import remote_state
 
-APPLICATION_NAME = "Joystick Gremlin SC"
-APPLICATION_VERSION = "13.40.7-sc"
+APPLICATION_NAME = "Joystick Gremlin Ex"
+APPLICATION_VERSION = "13.40.9ex"
 
 
 class GremlinUi(QtWidgets.QMainWindow):
@@ -365,7 +368,8 @@ class GremlinUi(QtWidgets.QMainWindow):
                 self._last_active_mode(),
                 self._profile
             )
-            self.ui.tray_icon.setIcon(QtGui.QIcon("gfx/icon_active.ico"))
+            self.ui.tray_icon.setIcon(ThemeQIcon("gfx/icon_active.ico"))
+            #self.ui.tray_icon.setIcon(QtGui.QIcon("gfx/icon_active.ico"))
             
             
 
@@ -380,7 +384,8 @@ class GremlinUi(QtWidgets.QMainWindow):
                 gremlin.ui.device_tab.KeyboardDeviceTabWidget
             ]:
                 self.ui.devices.currentWidget().refresh()
-            self.ui.tray_icon.setIcon(QtGui.QIcon("gfx/icon.ico"))
+            #self.ui.tray_icon.setIcon(QtGui.QIcon("gfx/icon.ico"))
+            self.ui.tray_icon.setIcon(ThemeQIcon("gfx/icon.ico"))
             
 
     def create_1to1_mapping(self):
@@ -680,7 +685,7 @@ class GremlinUi(QtWidgets.QMainWindow):
             )
             self.tabs[device.device_guid] = widget
             tab_label = device.name.strip()
-            tab_label += " #{:d}".format(device.vjoy_id)
+            tab_label += f" #{device.vjoy_id:d}"
             self.ui.devices.addTab(widget, tab_label)
 
         # Create keyboard tab
@@ -714,10 +719,7 @@ class GremlinUi(QtWidgets.QMainWindow):
                 self._current_mode
             )
             self.tabs[device.device_guid] = widget
-            self.ui.devices.addTab(
-                widget,
-                "{} #{:d}".format(device.name, device.vjoy_id)
-            )
+            self.ui.devices.addTab(widget,f"{device.name} #{device.vjoy_id:d}")
 
         # Add profile configuration tab
         widget = gremlin.ui.profile_settings.ProfileSettingsWidget(
@@ -736,53 +738,54 @@ class GremlinUi(QtWidgets.QMainWindow):
         if activate_tab is not None:
             for i in range(self.ui.devices.count()):
                 if self.ui.devices.tabText(i) == activate_tab:
-                    self.ui.devices.setCurrentIndex(i)
+                    with QtCore.QSignalBlocker(self.ui.devices):
+                        self.ui.devices.setCurrentIndex(i)
 
     def _setup_icons(self):
         """Sets the icons of all QAction items."""
         # Menu actions
         self.ui.actionLoadProfile.setIcon(
-            QtGui.QIcon("gfx/profile_open.svg")
+            ThemeQIcon("gfx/profile_open.svg")
         )
         self.ui.actionNewProfile.setIcon(
-            QtGui.QIcon("gfx/profile_new.svg")
+            ThemeQIcon("gfx/profile_new.svg")
         )
         self.ui.actionSaveProfile.setIcon(
-            QtGui.QIcon("gfx/profile_save.svg")
+            ThemeQIcon("gfx/profile_save.svg")
         )
         self.ui.actionSaveProfileAs.setIcon(
-            QtGui.QIcon("gfx/profile_save_as.svg")
+            ThemeQIcon("gfx/profile_save_as.svg")
         )
         self.ui.actionDeviceInformation.setIcon(
-            QtGui.QIcon("gfx/device_information.svg")
+            ThemeQIcon("gfx/device_information.svg")
         )
         self.ui.actionManageCustomModules.setIcon(
-            QtGui.QIcon("gfx/manage_modules.svg")
+            ThemeQIcon("gfx/manage_modules.svg")
         )
         self.ui.actionManageModes.setIcon(
-            QtGui.QIcon("gfx/manage_modes.svg")
+            ThemeQIcon("gfx/manage_modes.svg")
         )
         self.ui.actionInputRepeater.setIcon(
-            QtGui.QIcon("gfx/input_repeater.svg")
+            ThemeQIcon("gfx/input_repeater.svg")
         )
         self.ui.actionCalibration.setIcon(
-            QtGui.QIcon("gfx/calibration.svg")
+            ThemeQIcon("gfx/calibration.svg")
         )
         self.ui.actionInputViewer.setIcon(
-            QtGui.QIcon("gfx/input_viewer.svg")
+            ThemeQIcon("gfx/input_viewer.svg")
         )
         self.ui.actionLogDisplay.setIcon(
-            QtGui.QIcon("gfx/logview.png")
+            ThemeQIcon("gfx/logview.png")
         )
         self.ui.actionOptions.setIcon(
-            QtGui.QIcon("gfx/options.svg")
+            ThemeQIcon("gfx/options.svg")
         )
         self.ui.actionAbout.setIcon(
-            QtGui.QIcon("gfx/about.svg")
+            ThemeQIcon("gfx/about.svg")
         )
 
         # Toolbar actions
-        activate_icon = QtGui.QIcon()
+        activate_icon = ThemeQIcon()
         activate_icon.addPixmap(
             QtGui.QPixmap("gfx/activate.svg"),
             QtGui.QIcon.Normal
@@ -794,7 +797,7 @@ class GremlinUi(QtWidgets.QMainWindow):
         )
         self.ui.actionActivate.setIcon(activate_icon)
         self.ui.actionOpen.setIcon(
-            QtGui.QIcon("gfx/profile_open.svg")
+            ThemeQIcon("gfx/profile_open.svg")
         )
 
     # +---------------------------------------------------------------
@@ -967,14 +970,9 @@ class GremlinUi(QtWidgets.QMainWindow):
 
         :param mode the now current mode
         """
-        self.status_bar_mode.setText("<b>Mode:</b> {}".format(mode))
+        self.status_bar_mode.setText(f"<b>Mode:</b> {mode}")
         if self.config.mode_change_message:
-            self.ui.tray_icon.showMessage(
-                "Mode: {}".format(mode),
-                "",
-                0,
-                250
-            )
+            self.ui.tray_icon.showMessage(f"Mode: {mode}","",0,250)
 
     def _kb_event_cb(self, event):
         ''' listen for keyboard modifiers '''
@@ -1130,9 +1128,7 @@ class GremlinUi(QtWidgets.QMainWindow):
         except (KeyError, TypeError) as error:
             # An error occurred while parsing an existing profile,
             # creating an empty profile instead
-            logging.getLogger("system").exception(
-                "Invalid profile content:\n{}".format(error)
-            )
+            logging.getLogger("system").exception(f"Invalid profile content:\n{error}")
             self.new_profile()
         except gremlin.error.ProfileError as error:
             # Parsing the profile went wrong, stop loading and start with an
@@ -1140,11 +1136,7 @@ class GremlinUi(QtWidgets.QMainWindow):
             cfg = gremlin.config.Configuration()
             cfg.last_profile = None
             self.new_profile()
-            gremlin.util.display_error(
-                "Failed to load the profile {} due to:\n\n{}".format(
-                    fname, error
-                )
-            )
+            gremlin.util.display_error(f"Failed to load the profile {fname} due to:\n\n{error}")
 
     def _force_close(self):
         """Forces the closure of the program."""
@@ -1503,10 +1495,18 @@ if __name__ == "__main__":
     # Create user interface
     app_id = u"joystick.gremlin"
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+
+
+    # disable dark mode for now while we sort icons in a future version
+    os.environ["QT_QPA_PLATFORM"] = "windows:darkmode=0"
+
     app = QtWidgets.QApplication(sys.argv)
     app.setWindowIcon(QtGui.QIcon("gfx/icon.png"))
     app.setApplicationDisplayName(APPLICATION_NAME + " " + APPLICATION_VERSION)
     app.setApplicationVersion(APPLICATION_VERSION)
+    
+    # handle windows themes better
+    app.setStyle('Fusion')
 
     # Ensure joystick devices are correctly setup
     dill.DILL.init()

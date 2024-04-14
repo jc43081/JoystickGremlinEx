@@ -25,6 +25,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 import dill
 
 import gremlin
+from gremlin.theme import ThemeQIcon
 from joystick_gremlin import GremlinUi
 from . import common, ui_about
 
@@ -256,16 +257,16 @@ If this option is on, the last active profile will remain active until a differe
             self._show_executable
         )
         self.executable_add = QtWidgets.QPushButton()
-        self.executable_add.setIcon(QtGui.QIcon("gfx/button_add.png"))
+        self.executable_add.setIcon(ThemeQIcon("gfx/button_add.png"))
         self.executable_add.clicked.connect(self._new_executable)
         self.executable_remove = QtWidgets.QPushButton()
-        self.executable_remove.setIcon(QtGui.QIcon("gfx/button_delete.png"))
+        self.executable_remove.setIcon(ThemeQIcon("gfx/button_delete.png"))
         self.executable_remove.clicked.connect(self._remove_executable)
         self.executable_edit = QtWidgets.QPushButton()
-        self.executable_edit.setIcon(QtGui.QIcon("gfx/button_edit.png"))
+        self.executable_edit.setIcon(ThemeQIcon("gfx/button_edit.png"))
         self.executable_edit.clicked.connect(self._edit_executable)
         self.executable_list = QtWidgets.QPushButton()
-        self.executable_list.setIcon(QtGui.QIcon("gfx/list_show.png"))
+        self.executable_list.setIcon(ThemeQIcon("gfx/list_show.png"))
         self.executable_list.clicked.connect(self._list_executables)
 
         self.executable_layout.addWidget(self.executable_label)
@@ -281,7 +282,7 @@ If this option is on, the last active profile will remain active until a differe
         self.profile_field.textChanged.connect(self._update_profile)
         self.profile_field.editingFinished.connect(self._update_profile)
         self.profile_select = QtWidgets.QPushButton()
-        self.profile_select.setIcon(QtGui.QIcon("gfx/button_edit.png"))
+        self.profile_select.setIcon(ThemeQIcon("gfx/button_edit.png"))
         self.profile_select.clicked.connect(self._select_profile)
 
         self.profile_layout.addWidget(self.profile_field)
@@ -444,7 +445,7 @@ If this option is on, the last active profile will remain active until a differe
         if clicked:
             path = os.path.abspath(sys.argv[0])
             subprocess.run(
-                'reg add "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run" /V "Joystick Gremlin" /t REG_SZ /F /D "{}"'.format(path)
+                f'reg add "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run" /V "Joystick Gremlin" /t REG_SZ /F /D "{path}"'
             )
         else:
             subprocess.run(
@@ -937,7 +938,7 @@ class ModeManagerUi(common.BaseDialogUi):
 
             # Rename mode button
             self.mode_rename[mode] = QtWidgets.QPushButton(
-                QtGui.QIcon("gfx/button_edit.png"), ""
+                ThemeQIcon("gfx/button_edit.png"), ""
             )
             self.mode_layout.addWidget(self.mode_rename[mode], row, 2)
             self.mode_rename[mode].clicked.connect(
@@ -945,7 +946,7 @@ class ModeManagerUi(common.BaseDialogUi):
             )
             # Delete mode button
             self.mode_delete[mode] = QtWidgets.QPushButton(
-                QtGui.QIcon("gfx/mode_delete"), ""
+                ThemeQIcon("gfx/mode_delete"), ""
             )
             self.mode_layout.addWidget(self.mode_delete[mode], row, 3)
             self.mode_delete[mode].clicked.connect(
@@ -1035,7 +1036,7 @@ class ModeManagerUi(common.BaseDialogUi):
         if user_input:
             if name in gremlin.profile.mode_list(self._profile):
                 gremlin.util.display_error(
-                    "A mode with the name \"{}\" already exists".format(name)
+                    f"A mode with the name \"{name}\" already exists"
                 )
             else:
                 # Update the renamed mode in each device
@@ -1094,7 +1095,7 @@ class ModeManagerUi(common.BaseDialogUi):
         if user_input:
             if name in gremlin.profile.mode_list(self._profile):
                 gremlin.util.display_error(
-                    "A mode with the name \"{}\" already exists".format(name)
+                    f"A mode with the name \"{name}\" already exists"
                 )
             else:
                 for device in self._profile.devices.values():
@@ -1153,10 +1154,10 @@ class DeviceInformationUi(common.BaseDialogUi):
                 QtWidgets.QLabel(str(entry.hat_count)), i+1, 3
             )
             self.main_layout.addWidget(
-                QtWidgets.QLabel("{:04X}".format(entry.vendor_id)), i+1, 4
+                QtWidgets.QLabel(f"{entry.vendor_id:04X}"), i+1, 4
             )
             self.main_layout.addWidget(
-                QtWidgets.QLabel("{:04X}".format(entry.product_id)), i+1, 5
+                QtWidgets.QLabel(f"{entry.product_id:04X}"), i+1, 5
             )
             guid_field = QtWidgets.QLineEdit()
             guid_field.setText(str(entry.device_guid))
@@ -1261,12 +1262,10 @@ class SwapDevicesUi(common.BaseDialogUi):
             name = QtWidgets.QLabel(data.name)
             name.setAlignment(QtCore.Qt.AlignTop)
             labels = QtWidgets.QLabel("Containers\nConditions\nMerge Axis")
-            counts = QtWidgets.QLabel("{:d}\n{:d}\n{:d}".format(
-                data.containers, data.conditions, data.merge_axis
-            ))
+            counts = QtWidgets.QLabel(f"{data.containers:d}\n{data.conditions:d}\n{data.merge_axis:d}")
             counts.setAlignment(QtCore.Qt.AlignRight)
             record_button = QtWidgets.QPushButton(
-                "Assigned to: {} - {}".format(data.device_guid, data.name)
+                f"Assigned to: {data.device_guid} - {data.name}"
             )
             record_button.clicked.connect(
                 self._create_request_user_input_cb(data.device_guid)

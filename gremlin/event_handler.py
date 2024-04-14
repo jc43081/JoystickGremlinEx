@@ -133,13 +133,14 @@ class Event:
         :param key the Key object from which to create the Event
         :return Event object corresponding to the provided key
         """
-        assert isinstance(key, macro.Key)
-        return Event(
-            event_type=common.InputType.Keyboard,
-            identifier=(key.scan_code, key.is_extended),
-            device_guid=dill.GUID_Keyboard
-        )
-
+        if hasattr(key,"scan_code") and hasattr(key,"is_extended"):
+            return Event(
+                event_type=common.InputType.Keyboard,
+                identifier=(key.scan_code, key.is_extended),
+                device_guid=dill.GUID_Keyboard
+            )
+        
+        raise ValueError(f"Unable to handle parameter - not a valid key: {key}")
 
 class DeviceChangeEvent:
     ''' sent when a new device is selected '''
@@ -493,8 +494,7 @@ class EventHandler(QtCore.QObject):
                 mode_exists = True
         if not mode_exists:
             logging.getLogger("system").error(
-                "The mode \"{}\" does not exist or has no"
-                " associated callbacks".format(new_mode)
+                f"The mode \"{new_mode}\" does not exist or has no associated callbacks"
             )
 
         if mode_exists:
@@ -541,7 +541,7 @@ class EventHandler(QtCore.QObject):
             except error.VJoyError as e:
                 util.display_error(str(e))
                 logging.getLogger("system").exception(
-                    "VJoy related error: {}".format(e)
+                    f"VJoy related error: {e}"
                 )
                 self.pause()
 

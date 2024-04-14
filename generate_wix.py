@@ -55,8 +55,8 @@ def create_data_for_file(path):
     """
     return {
         "component_guid": uuid.uuid4(),
-        "component_id": "component_{}".format(sanitize_path(path))[:72],
-        "file_id": "file_{}".format(sanitize_path(path))[:72],
+        "component_id": f"component_{sanitize_path(path)}",
+        "file_id": f"file_{sanitize_path(path)}",
         "file_source": path
     }
 
@@ -223,13 +223,16 @@ def create_document():
             # "Id": "290a3110-0745-48d6-93d2-d954cb584b6f", # 12.0.0
             # "Id": "6019660b-26bd-430b-9b95-ca6a55201060",  # 13.0.0
             # "Id": "0dad4221-c8cf-4424-8dcd-3886274e89ef", # 13.1.0
+            #"Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
+            #"Id": "7cdb8375-66a1-4114-be79-b17027e8c0df", # 13.40.7ex
+            #"Id": "739095a7-19cc-4154-ac9c-c51f5f516527", # 13.40.8ex
+            "Id": "654c694d-753c-4ec1-8a8d-8a0f2f3133d8", # 13.40.9ex
             # "Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
             "ProductCode": "81b0f529-22eb-465a-a459-b20d06a162dc", # 13.40.7-sc
             "UpgradeCode": "1f5d614b-6cec-47d8-90e3-40f7e7458f7a",
             "Language": "1033",
             "Codepage": "1252",
-            "Version": version,
-            "InstallerVersion": "100"
+            "Version": "13.40.9ex"
         })
     
     # also change version number in joystick_gremlin.py line 60 APPLICATION_VERSION
