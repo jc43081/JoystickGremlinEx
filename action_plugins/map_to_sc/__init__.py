@@ -109,12 +109,15 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.maptosc_type_layout.addWidget(self.relative_scaling)
             self.maptosc_type_layout.addWidget(QtWidgets.QLabel("Scale"))
 
-            self.maptosc_type_widget.hide()
             self.main_layout.addWidget(self.maptosc_type_widget)
 
-            # The widgets should only be shown when we actually map to an axis
-            if self.action_data.input_type == InputType.JoystickAxis:
-                self.maptosc_type_widget.show()
+        # Show a message when mapping a hat not within the Hat Buttons container
+        if self.action_data.hardware_input_type == InputType.JoystickHat and self.action_data.parent.name != "Hat Buttons":
+            self.maptosc_hat_widget = QtWidgets.QWidget()
+            self.maptosc_hat_layout = QtWidgets.QHBoxLayout(self.maptosc_hat_widget)
+            #self.maptosc_hat_layout.addStretch()            
+            self.maptosc_hat_layout.addWidget(QtWidgets.QLabel("Hats require mapping a Virtual Button. Remember to select a direction on the Virtual Button tab to the right."))
+            self.main_layout.addWidget(self.maptosc_hat_widget)
 
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -185,10 +188,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.action_data.vjoy_device_id = controls_data["vjoy_device_id"]
             self.action_data.vjoy_input_id = controls_data["vjoy_input_id"]
             self.action_data.description = controls_data["description"]
-            if self.action_data.parent_input_item.description != controls_data["description"]:
-                self.action_data.parent_input_item.description = controls_data["description"]
-                el = gremlin.event_handler.EventListener()
-                el.action_description_changed.emit()
+            self.update_input_item_description()
 
             if self.action_data.input_type == InputType.JoystickAxis:
                 self.action_data.axis_mode = "absolute"
@@ -202,6 +202,35 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         except gremlin.error.GremlinError as e:
             logging.getLogger("system").error(str(e))
 
+
+    def update_input_item_description(self):
+        if len(self.action_data.parent.action_sets) == 1 and len(self.action_data.parent_input_item.containers) == 1:
+            if len(self.action_data.parent.action_sets[0]) == 1:
+                if self.action_data.parent_input_item.description != self.action_data.description:
+                    self.action_data.parent_input_item.description = self.action_data.description
+                    # broadcast change so UI updates with new description
+                    el = gremlin.event_handler.EventListener()
+                    el.action_description_changed.emit()
+            else:
+                self.action_data.description = "Multiple Actions Defined..."
+                self.action_data.parent_input_item.description = "Multiple Actions Defined..."
+                # broadcast change so UI updates with new description
+                el = gremlin.event_handler.EventListener()
+                el.action_description_changed.emit()                
+        # if multiple actions available
+        elif len(self.action_data.parent.action_sets) > 1:
+            self.action_data.description = "Multiple Actions Defined..."
+            self.action_data.parent_input_item.description = "Multiple Actions Defined..."
+            # broadcast change so UI updates with new description
+            el = gremlin.event_handler.EventListener()
+            el.action_description_changed.emit()
+        # if multiple containers available
+        elif len(self.action_data.parent_input_item.containers) > 1:
+            self.action_data.description = "Multiple Actions Defined..."
+            self.action_data.parent_input_item.description = "Multiple Actions Defined..."
+            # broadcast change so UI updates with new description
+            el = gremlin.event_handler.EventListener()
+            el.action_description_changed.emit()            
 
 class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
