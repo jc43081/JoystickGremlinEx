@@ -16,10 +16,12 @@ class ControlsMappingReader(metaclass=Singleton):
     def __init__(self, controls_mapping):
         util.log("ControlsMappingReader::init " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         util.log("ControlsMappingReader::mapping - " + controls_mapping)
+        util.log("ControlsMappingReader::current directory - " + os.getcwd())
+        controls_mapping_file = os.path.join(os.getcwd(), controls_mapping)
 
         self.controls_list = []
         try:
-            self.controls_list = json.loads(pathlib.Path(controls_mapping).read_text(encoding="UTF-8"))
+            self.controls_list = json.loads(pathlib.Path(controls_mapping_file).read_text(encoding="UTF-8"))
         except:
             util.display_error("Unable to read in Controls Mapping. Make sure the Controls Mappings Settings is correct and file is available.")
             raise error.GremlinError(
