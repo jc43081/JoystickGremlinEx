@@ -285,16 +285,12 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                     and self.needs_auto_release:
                 
                 # Press Keyboard Combo - Right CTRL + Right ALT
-                if value.current:
-                    keyboard.send_key_down(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
-                    keyboard.send_key_down(keyboard.key_from_code(self.rctrl.scan_code, self.rctrl.is_extended))
-                    input_devices.ButtonReleaseActions().register_callback(
-                         lambda: gremlin.macro.MacroManager().queue_macro(self.release),
-                         event
-                    )
-                else:
-                    keyboard.send_key_up(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
-                    keyboard.send_key_up(keyboard.key_from_code(self.rctrl.scan_code,  self.rctrl.is_extended))
+                keyboard.send_key_down(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
+                keyboard.send_key_down(keyboard.key_from_code(self.rctrl.scan_code, self.rctrl.is_extended))
+                input_devices.ButtonReleaseActions().register_callback(
+                        lambda: self.release_alt_ctrl(),
+                        event
+                )                    
 
                 # Release the Vjoy button
                 input_devices.ButtonReleaseActions().register_button_release(
@@ -305,11 +301,24 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
             joystick_handling.VJoyProxy()[self.vjoy_device_id] \
                 .button(self.vjoy_input_id).is_pressed = value.current
 
+            # release the alt and ctrl if not pressed anymore
+            if event.is_pressed == False:
+                keyboard.send_key_up(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
+                keyboard.send_key_up(keyboard.key_from_code(self.rctrl.scan_code,  self.rctrl.is_extended))
+                
+
+
         elif self.input_type == InputType.JoystickHat:
+
             joystick_handling.VJoyProxy()[self.vjoy_device_id] \
                 .hat(self.vjoy_input_id).direction = value.current
 
         return True
+
+    def release_alt_ctrl(self):
+        keyboard.send_key_up(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
+        keyboard.send_key_up(keyboard.key_from_code(self.rctrl.scan_code,  self.rctrl.is_extended))
+
 
     def relative_axis_thread(self):
         self.thread_running = True
