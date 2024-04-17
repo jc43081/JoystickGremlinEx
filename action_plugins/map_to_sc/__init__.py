@@ -188,7 +188,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.action_data.vjoy_device_id = controls_data["vjoy_device_id"]
             self.action_data.vjoy_input_id = controls_data["vjoy_input_id"]
             self.action_data.description = controls_data["description"]
-            self.update_input_item_description()
+            self._update_input_item_description()
 
             if self.action_data.input_type == InputType.JoystickAxis:
                 self.action_data.axis_mode = "absolute"
@@ -203,34 +203,48 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             logging.getLogger("system").error(str(e))
 
 
-    def update_input_item_description(self):
-        if len(self.action_data.parent.action_sets) == 1 and len(self.action_data.parent_input_item.containers) == 1:
-            if len(self.action_data.parent.action_sets[0]) == 1:
-                if self.action_data.parent_input_item.description != self.action_data.description:
-                    self.action_data.parent_input_item.description = self.action_data.description
-                    # broadcast change so UI updates with new description
-                    el = gremlin.event_handler.EventListener()
-                    el.action_description_changed.emit()
-            else:
+    def _update_input_item_description(self):
+        update_description = False
+        action_description_found = False
+        # check for an action description first
+        for container in self.action_data.parent_input_item.containers:
+            if len(container.action_sets) > 0:
+                for action_set in container.action_sets:
+                    for action in action_set:
+                        if action.name == "Description":
+                            if self.action_data.parent_input_item.description != action.description:
+                                self.action_data.parent_input_item.description = action.description
+                                update_description = True
+                            action_description_found = True
+                            break
+
+        # Use the SC Control description if its the only component
+        if action_description_found == False:
+            if len(self.action_data.parent.action_sets) == 1 and len(self.action_data.parent_input_item.containers) == 1:
+                if len(self.action_data.parent.action_sets[0]) == 1:
+                    if self.action_data.parent_input_item.description != self.action_data.description:
+                        self.action_data.parent_input_item.description = self.action_data.description
+                        update_description = True
+                else:
+                    self.action_data.description = "Multiple Actions Defined..."
+                    self.action_data.parent_input_item.description = "Multiple Actions Defined..."
+                    update_description = True
+            # if multiple actions available
+            elif len(self.action_data.parent.action_sets) > 1:
                 self.action_data.description = "Multiple Actions Defined..."
                 self.action_data.parent_input_item.description = "Multiple Actions Defined..."
-                # broadcast change so UI updates with new description
-                el = gremlin.event_handler.EventListener()
-                el.action_description_changed.emit()                
-        # if multiple actions available
-        elif len(self.action_data.parent.action_sets) > 1:
-            self.action_data.description = "Multiple Actions Defined..."
-            self.action_data.parent_input_item.description = "Multiple Actions Defined..."
-            # broadcast change so UI updates with new description
+                update_description = True
+            # if multiple containers available
+            elif len(self.action_data.parent_input_item.containers) > 1:
+                self.action_data.description = "Multiple Actions Defined..."
+                self.action_data.parent_input_item.description = "Multiple Actions Defined..."
+                update_description = True
+
+        if update_description:
             el = gremlin.event_handler.EventListener()
             el.action_description_changed.emit()
-        # if multiple containers available
-        elif len(self.action_data.parent_input_item.containers) > 1:
-            self.action_data.description = "Multiple Actions Defined..."
-            self.action_data.parent_input_item.description = "Multiple Actions Defined..."
-            # broadcast change so UI updates with new description
-            el = gremlin.event_handler.EventListener()
-            el.action_description_changed.emit()            
+
+
 
 class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
