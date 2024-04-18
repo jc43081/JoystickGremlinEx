@@ -724,7 +724,7 @@
                 "action": "v_ifcs_speed_limiter_reset_scm"
             },
             {
-                "name": "Accleration Limiter Increase",
+                "name": "Acceleration Limiter Increase",
                 "id": 205,
                 "type": "button",
                 "vjoy": 1,
@@ -733,7 +733,7 @@
                 "action": "v_accel_range_up"
             },
             {
-                "name": "Accleration Limiter Decrease",
+                "name": "Acceleration Limiter Decrease",
                 "id": 210,
                 "type": "button",
                 "vjoy": 1,
@@ -742,7 +742,7 @@
                 "action": "v_accel_range_down"
             },
             {
-                "name": "Accleration Limiter Up/Down (relative)",
+                "name": "Acceleration Limiter Up/Down (relative)",
                 "id": 215,
                 "type": "axis",
                 "vjoy": 2,
@@ -751,7 +751,7 @@
                 "action": "v_accel_range_rel"
             },
             {
-                "name": "Accleration Limiter Up/Down (absolute)",
+                "name": "Acceleration Limiter Up/Down (absolute)",
                 "id": 220,
                 "type": "axis",
                 "vjoy": 2,
@@ -1165,7 +1165,7 @@
                 "action": "v_target_tracking_auto_zoom"
             },
             {
-                "name": "Enter Remove Turret 1",
+                "name": "Enter Remote Turret 1",
                 "id": 110,
                 "type": "button",
                 "vjoy": 2,
@@ -1174,7 +1174,7 @@
                 "action": "v_enter_remote_turret_1"
             },
             {
-                "name": "Enter Remove Turret 2",
+                "name": "Enter Remote Turret 2",
                 "id": 115,
                 "type": "button",
                 "vjoy": 2,
@@ -1183,7 +1183,7 @@
                 "action": "v_enter_remote_turret_2"
             },
             {
-                "name": "Enter Remove Turret 3",
+                "name": "Enter Remote Turret 3",
                 "id": 120,
                 "type": "button",
                 "vjoy": 2,
@@ -2128,7 +2128,7 @@
                 "action": "v_weapon_gimbal_mode_cycle_all"
             },
             {
-                "name": "Cycle Fixd/Auto Gimbal Modes",
+                "name": "Cycle Fixed/Auto Gimbal Modes",
                 "id": 40,
                 "type": "button",
                 "vjoy": 3,
