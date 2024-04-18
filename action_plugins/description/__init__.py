@@ -22,6 +22,7 @@ from xml.etree import ElementTree
 
 from gremlin.base_classes import AbstractAction, AbstractFunctor
 from gremlin.common import InputType
+import gremlin.profile
 import gremlin.ui.input_item
 
 
@@ -47,6 +48,22 @@ class DescriptionActionWidget(gremlin.ui.input_item.AbstractActionWidget):
 
     def _update_description(self, value):
         self.action_data.description = value
+
+        # broadcast to update the Action Description in the tab
+        input_item = self._find_input_item(self.action_data.parent)
+        if input_item.description != self.action_data.description:
+            input_item.description = self.action_data.description                 
+            el = gremlin.event_handler.EventListener()
+            el.action_description_changed.emit()
+
+
+    def _find_input_item(self, parent):
+        input_item = None
+        if isinstance(parent, gremlin.profile.InputItem):
+            input_item = parent
+        else:
+            input_item = self._find_input_item(parent.parent)
+        return input_item
 
 
 class DescriptionActionFunctor(AbstractFunctor):
