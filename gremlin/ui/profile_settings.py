@@ -242,6 +242,8 @@ class ControlsMapping(QtWidgets.QGroupBox):
         :param index the index of the entry selected
         """
         self.profile_data.sc_controls_mapping = text
+        el = gremlin.event_handler.EventListener()
+        el.controls_mapping_changed.emit(self.profile_data.sc_controls_mapping)
 
 
 class VJoyAxisDefaultsWidget(QtWidgets.QWidget):
