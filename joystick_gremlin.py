@@ -63,7 +63,7 @@ from gremlin.ui.ui_gremlin import Ui_Gremlin
 from gremlin.input_devices import remote_state
 
 APPLICATION_NAME = "Joystick Gremlin SC"
-APPLICATION_VERSION = "13.40.9-sc"
+APPLICATION_VERSION = "13.40.9-sc1"
 
 
 class GremlinUi(QtWidgets.QMainWindow):

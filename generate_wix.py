@@ -226,11 +226,11 @@ def create_document():
             #"Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
             #"Id": "7cdb8375-66a1-4114-be79-b17027e8c0df", # 13.40.7ex
             #"Id": "739095a7-19cc-4154-ac9c-c51f5f516527", # 13.40.8ex
-            "ProductCode": "ac4565b4-1eec-46bc-b1b0-b927e24a0ba2", # 13.40.9-sc
+            "ProductCode": "ec6719cb-e71f-4ad0-9fbe-4d669a02839b", # 13.40.9-sc1
             "UpgradeCode": "1f5d614b-6cec-47d8-90e3-40f7e7458f7a",
             "Language": "1033",
             "Codepage": "1252",
-            "Version": "13.40.9-sc",
+            "Version": "13.40.9-sc1",
             "InstallerVersion": "100"
         })
     
