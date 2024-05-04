@@ -41,8 +41,6 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
     as the remapping for the currently selected input.
     """
 
-    controls_description_changed = QtCore.Signal()
-
     # Mapping from types to display names
     type_to_name_map = {
         InputType.JoystickAxis: "Axis",
@@ -90,6 +88,8 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             input_types[self._get_input_type()],
             self.action_data.settings
         )
+        el = gremlin.event_handler.EventListener()
+        el.controls_mapping_changed.connect(self.controls_selector.controls_mapping_changed)
         self.main_layout.addWidget(self.controls_selector)
 
         # Create UI widgets for absolute / relative axis modes if the remap
@@ -115,7 +115,6 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         if self.action_data.hardware_input_type == InputType.JoystickHat and self.action_data.parent.name != "Hat Buttons":
             self.maptosc_hat_widget = QtWidgets.QWidget()
             self.maptosc_hat_layout = QtWidgets.QHBoxLayout(self.maptosc_hat_widget)
-            #self.maptosc_hat_layout.addStretch()            
             self.maptosc_hat_layout.addWidget(QtWidgets.QLabel("Hats require mapping a Virtual Button. Remember to select a direction on the Virtual Button tab to the right."))
             self.main_layout.addWidget(self.maptosc_hat_widget)
 
@@ -243,8 +242,6 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         if update_description:
             el = gremlin.event_handler.EventListener()
             el.action_description_changed.emit()
-
-
 
 class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
@@ -575,6 +572,11 @@ class ScControlsSelector(QtWidgets.QWidget):
         self.controls_registry = []
 
         self._create_controls_dropdown()
+
+    def controls_mapping_changed(self, controls_mapping):
+        reader = mapping_reader.ControlsMappingReader(controls_mapping)
+        reader.resetControlsMapping(controls_mapping)
+
 
     def get_selection(self):
         gremlin.util.log("ControlsSelector::get selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
