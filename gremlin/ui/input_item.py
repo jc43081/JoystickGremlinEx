@@ -228,6 +228,7 @@ class InputItemListView(common.AbstractView):
 
         el = gremlin.event_handler.EventListener()
         el.profile_device_mapping_changed.connect(self._profile_device_mapping_changed)
+        el.action_description_changed.connect(self.redraw)
 
     @property
     def current_index(self):
