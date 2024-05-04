@@ -200,6 +200,9 @@ class EventListener(QtCore.QObject):
 
     # occurs on broadcast mode change
     broadcast_changed = QtCore.Signal(StateChangeEvent)
+
+    # occurs when a new controls mapping is defined
+    controls_mapping_changed = QtCore.Signal(str)
         
 
     def __init__(self):
