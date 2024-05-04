@@ -10,6 +10,9 @@ SC Added Features
 - MaptoSC plugin for mapping directly to Star Citizen controls
   - For instructions on using this plugin, visit [SC Controls Mapper on Nexus](https://www.nexusmods.com/starcitizen/mods/23)
 
+Current Support:
+- 3.22.1
+- 3.23.0
 
 <hr style="border:3px solid gray">
 
