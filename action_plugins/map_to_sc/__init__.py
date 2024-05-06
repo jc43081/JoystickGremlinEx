@@ -264,13 +264,13 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         self.axis_value = 0.0
 
         # Include keypresses to avoid mapping conflicts
-        self.ralt = keyboard.g_name_to_key['rightalt']
-        self.rctrl = keyboard.g_name_to_key['rightcontrol']
-        keys = [ [self.ralt.scan_code, self.ralt.is_extended], [self.rctrl.scan_code, self.rctrl.is_extended ] ]
-        self.release = gremlin.macro.Macro()
-        # Execute release in reverse order
-        for key in reversed(keys):
-            self.release.release(gremlin.macro.key_from_code(key[0], key[1]))        
+        # self.alt = keyboard.g_name_to_key['leftalt']
+        # self.ctrl = keyboard.g_name_to_key['leftcontrol']
+        # keys = [ [self.alt.scan_code, self.alt.is_extended], [self.ctrl.scan_code, self.ctrl.is_extended ] ]
+        # self.release = gremlin.macro.Macro()
+        # # Execute release in reverse order
+        # for key in reversed(keys):
+        #     self.release.release(gremlin.macro.key_from_code(key[0], key[1]))        
 
     def process_event(self, event, value):
         if self.input_type == InputType.JoystickAxis:
@@ -295,13 +295,13 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                     and event.is_pressed \
                     and self.needs_auto_release:
                 
-                # Press Keyboard Combo - Right CTRL + Right ALT
-                keyboard.send_key_down(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
-                keyboard.send_key_down(keyboard.key_from_code(self.rctrl.scan_code, self.rctrl.is_extended))
-                input_devices.ButtonReleaseActions().register_callback(
-                        lambda: self.release_alt_ctrl(),
-                        event
-                )                    
+                # # Press Keyboard Combo - Right CTRL + Right ALT
+                # keyboard.send_key_down(keyboard.key_from_code(self.alt.scan_code, self.alt.is_extended))
+                # keyboard.send_key_down(keyboard.key_from_code(self.ctrl.scan_code, self.ctrl.is_extended))
+                # input_devices.ButtonReleaseActions().register_callback(
+                #         lambda: self.release_alt_ctrl(),
+                #         event
+                # )                    
 
                 # Release the Vjoy button
                 input_devices.ButtonReleaseActions().register_button_release(
@@ -309,26 +309,24 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                     event
                 )
 
-            joystick_handling.VJoyProxy()[self.vjoy_device_id] \
-                .button(self.vjoy_input_id).is_pressed = value.current
+                joystick_handling.VJoyProxy()[self.vjoy_device_id] \
+                    .button(self.vjoy_input_id).is_pressed = value.current
 
             # release the alt and ctrl if not pressed anymore
-            if event.is_pressed == False:
-                keyboard.send_key_up(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
-                keyboard.send_key_up(keyboard.key_from_code(self.rctrl.scan_code,  self.rctrl.is_extended))
-                
-
-
+            # if event.is_pressed == False:
+            #     keyboard.send_key_up(keyboard.key_from_code(self.alt.scan_code, self.alt.is_extended))
+            #     keyboard.send_key_up(keyboard.key_from_code(self.ctrl.scan_code,  self.ctrl.is_extended))
+               
         elif self.input_type == InputType.JoystickHat:
 
             joystick_handling.VJoyProxy()[self.vjoy_device_id] \
-                .hat(self.vjoy_input_id).direction = value.current
+                .hat(self.vjoy_input_id).direction = value.currents
 
         return True
 
-    def release_alt_ctrl(self):
-        keyboard.send_key_up(keyboard.key_from_code(self.ralt.scan_code, self.ralt.is_extended))
-        keyboard.send_key_up(keyboard.key_from_code(self.rctrl.scan_code,  self.rctrl.is_extended))
+    # def release_alt_ctrl(self):
+    #     keyboard.send_key_up(keyboard.key_from_code(self.alt.scan_code, self.alt.is_extended))
+    #     keyboard.send_key_up(keyboard.key_from_code(self.ctrl.scan_code,  self.ctrl.is_extended))
 
 
     def relative_axis_thread(self):
