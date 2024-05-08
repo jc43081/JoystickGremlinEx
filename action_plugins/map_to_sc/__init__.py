@@ -309,8 +309,8 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                     event
                 )
 
-                joystick_handling.VJoyProxy()[self.vjoy_device_id] \
-                    .button(self.vjoy_input_id).is_pressed = value.current
+            joystick_handling.VJoyProxy()[self.vjoy_device_id] \
+                .button(self.vjoy_input_id).is_pressed = value.current
 
             # release the alt and ctrl if not pressed anymore
             # if event.is_pressed == False:
