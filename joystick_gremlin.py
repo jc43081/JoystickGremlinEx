@@ -52,6 +52,7 @@ import gremlin.ui.common
 import gremlin.ui.device_tab
 import gremlin.ui.dialogs
 import gremlin.ui.input_viewer
+import gremlin.ui.sc_vjoy_mapper
 import gremlin.ui.merge_axis
 import gremlin.ui.user_plugin_management
 import gremlin.ui.profile_creator
@@ -63,7 +64,7 @@ from gremlin.ui.ui_gremlin import Ui_Gremlin
 from gremlin.input_devices import remote_state
 
 APPLICATION_NAME = "Joystick Gremlin SC"
-APPLICATION_VERSION = "13.40.9-sc.5"
+APPLICATION_VERSION = "13.40.9-sc.6"
 
 
 class GremlinUi(QtWidgets.QMainWindow):
@@ -463,6 +464,23 @@ class GremlinUi(QtWidgets.QMainWindow):
             lambda: self._remove_modal_window("input_viewer")
         )
 
+
+    def sc_vjoy_mapper(self):
+        """Displays the SC vJoy Mapper dialog."""
+        self.modal_windows["sc_vjoy_mapper"] = \
+            gremlin.ui.sc_vjoy_mapper.ScVjoyMapperUI()
+        geom = self.geometry()
+        self.modal_windows["sc_vjoy_mapper"].setGeometry(
+            int(geom.x() + geom.width() / 2 - 350),
+            int(geom.y() + geom.height() / 2 - 150),
+            700,
+            300
+        )
+        self.modal_windows["sc_vjoy_mapper"].show()
+        self.modal_windows["sc_vjoy_mapper"].closed.connect(
+            lambda: self._remove_modal_window("sc_vjoy_mapper")
+        )
+
     def load_profile(self):
         """Prompts the user to select a profile file to load."""
         if not self._save_changes_request():
@@ -573,6 +591,7 @@ class GremlinUi(QtWidgets.QMainWindow):
         self.ui.actionInputRepeater.triggered.connect(self.input_repeater)
         self.ui.actionCalibration.triggered.connect(self.calibration)
         self.ui.actionInputViewer.triggered.connect(self.input_viewer)
+        self.ui.actionScVjoyMapper.triggered.connect(self.sc_vjoy_mapper)
         self.ui.actionPDFCheatsheet.triggered.connect(
             lambda: self._create_cheatsheet()
         )

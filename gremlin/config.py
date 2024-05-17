@@ -44,6 +44,7 @@ class Configuration:
         fname = self.get_config()
         if not os.path.isfile(fname):
             # create a stub - first time run
+            os.makedirs(util.userprofile_path(), exist_ok=True)
             self.save()
 
 
