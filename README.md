@@ -1,4 +1,4 @@
-Joystick Gremlin SC - 13.40.9-sc.5
+Joystick Gremlin SC - 13.40.9-sc.6
 ================
 
 Joystick Gremlin SC is a customized version of Joystick Gremlin Ex. It is a trial version for mapping game controls directly within Joystick Gremlin and then providing associated mapping files for the game. In this case, the game is Star Citizen. If this version is heavily used (or there is desire expressed to support other games), the mapping functionality will be incorporated back into the Ex version for use by all. 
@@ -9,10 +9,12 @@ SC Added Features
 -----------
 - MaptoSC plugin for mapping directly to Star Citizen controls
   - For instructions on using this plugin, visit [SC Controls Mapper on Nexus](https://www.nexusmods.com/starcitizen/mods/23)
+- Tool for generating Control Profile that aligns with current vJoy ordering in Star Citizen
+  - Use the tool to automatically update the Control Profile to match how Star Citizen has allocated the vJoys
+  - Grab the vJoyCheck JoyStick Gremlin profile off of Nexus when using (see the Files section)
 
 Current Support:
-- 3.22.1
-- 3.23.0
+- 3.23.1
 
 <hr style="border:3px solid gray">
 
