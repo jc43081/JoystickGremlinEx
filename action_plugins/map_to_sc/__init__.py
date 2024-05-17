@@ -263,15 +263,6 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         self.axis_delta_value = 0.0
         self.axis_value = 0.0
 
-        # Include keypresses to avoid mapping conflicts
-        # self.alt = keyboard.g_name_to_key['leftalt']
-        # self.ctrl = keyboard.g_name_to_key['leftcontrol']
-        # keys = [ [self.alt.scan_code, self.alt.is_extended], [self.ctrl.scan_code, self.ctrl.is_extended ] ]
-        # self.release = gremlin.macro.Macro()
-        # # Execute release in reverse order
-        # for key in reversed(keys):
-        #     self.release.release(gremlin.macro.key_from_code(key[0], key[1]))        
-
     def process_event(self, event, value):
         if self.input_type == InputType.JoystickAxis:
             if self.axis_mode == "absolute":
@@ -294,14 +285,6 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
             if event.event_type in [InputType.JoystickButton, InputType.Keyboard] \
                     and event.is_pressed \
                     and self.needs_auto_release:
-                
-                # # Press Keyboard Combo - Right CTRL + Right ALT
-                # keyboard.send_key_down(keyboard.key_from_code(self.alt.scan_code, self.alt.is_extended))
-                # keyboard.send_key_down(keyboard.key_from_code(self.ctrl.scan_code, self.ctrl.is_extended))
-                # input_devices.ButtonReleaseActions().register_callback(
-                #         lambda: self.release_alt_ctrl(),
-                #         event
-                # )                    
 
                 # Release the Vjoy button
                 input_devices.ButtonReleaseActions().register_button_release(
@@ -311,11 +294,6 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
             joystick_handling.VJoyProxy()[self.vjoy_device_id] \
                 .button(self.vjoy_input_id).is_pressed = value.current
-
-            # release the alt and ctrl if not pressed anymore
-            # if event.is_pressed == False:
-            #     keyboard.send_key_up(keyboard.key_from_code(self.alt.scan_code, self.alt.is_extended))
-            #     keyboard.send_key_up(keyboard.key_from_code(self.ctrl.scan_code,  self.ctrl.is_extended))
                
         elif self.input_type == InputType.JoystickHat:
 
@@ -323,11 +301,6 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
                 .hat(self.vjoy_input_id).direction = value.currents
 
         return True
-
-    # def release_alt_ctrl(self):
-    #     keyboard.send_key_up(keyboard.key_from_code(self.alt.scan_code, self.alt.is_extended))
-    #     keyboard.send_key_up(keyboard.key_from_code(self.ctrl.scan_code,  self.ctrl.is_extended))
-
 
     def relative_axis_thread(self):
         self.thread_running = True
@@ -611,7 +584,7 @@ class ScControlsSelector(QtWidgets.QWidget):
             vjoy_input_id = control_entry["keyboard"]
          
         input_type = self.valid_types[0]
-        description =  control_entry["name"] + " [" + category_entry["name"] + "]"
+        description =  control_entry["name"]
 
         return {
             "category_id": category_id,
