@@ -122,6 +122,7 @@ class GremlinUi(QtWidgets.QMainWindow):
         self._profile = gremlin.profile.Profile()
         self._profile_fname = None
         self._profile_auto_activated = False
+
         # Input selection storage
         self._last_input_timestamp = time.time()
         self._last_input_event = None
@@ -148,6 +149,9 @@ class GremlinUi(QtWidgets.QMainWindow):
             self._do_load_profile(self.config.last_profile)
         else:
             self.new_profile()
+
+        # hook to allow reload of profiles
+        el.reload_profile.connect(self._do_reload_profile)
 
         # Setup the recent files menu
         self._create_recent_profiles()
@@ -1103,6 +1107,14 @@ class GremlinUi(QtWidgets.QMainWindow):
         :return function which will load the specified profile
         """
         return lambda: self._load_recent_profile(fname)
+    
+    def _do_reload_profile(self, fname):
+        """Prompts the user to select a profile file to load."""
+        if not self._save_changes_request():
+            return
+        # Reload after save        
+        self._do_load_profile(fname)
+
 
     def _do_load_profile(self, fname):
         """Load the profile with the given filename.
