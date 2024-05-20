@@ -86,10 +86,9 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         self.controls_selector = ScControlsSelector(
             lambda x: self.save_controls_changes(),
             input_types[self._get_input_type()],
-            self.action_data.settings
+            self.action_data.controls_list
         )
-        el = gremlin.event_handler.EventListener()
-        el.controls_mapping_changed.connect(self.controls_selector.controls_mapping_changed)
+
         self.main_layout.addWidget(self.controls_selector)
 
         # Create UI widgets for absolute / relative axis modes if the remap
@@ -129,10 +128,10 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             category_id = self.action_data.category_id
         else:
             category_id = self.controls_selector.controls_registry[0]["category_id"]
-        if (self.action_data.controls_id != None):
-            controls_id = self.action_data.controls_id
+        if (self.action_data.control_id != None):
+            control_id = self.action_data.control_id
         else:
-            controls_id = self.controls_selector.controls_registry[0]["values"][0]
+            control_id = self.controls_selector.controls_registry[0]["values"][0]
 
         # Get the input type which can change depending on the container used
         input_type = self.action_data.input_type
@@ -149,7 +148,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.controls_selector.set_selection(
                 input_type,
                 category_id,
-                controls_id
+                control_id
             )
 
             if self.action_data.input_type == InputType.JoystickAxis:
@@ -182,10 +181,8 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             input_type_changed = \
                 self.action_data.input_type != controls_data["input_type"]
             self.action_data.category_id = controls_data["category_id"]
-            self.action_data.controls_id = controls_data["controls_id"]
+            self.action_data.control_id = controls_data["control_id"]
             self.action_data.input_type = controls_data["input_type"]
-            self.action_data.vjoy_device_id = controls_data["vjoy_device_id"]
-            self.action_data.vjoy_input_id = controls_data["vjoy_input_id"]
             self.action_data.description = controls_data["description"]
             self._update_input_item_description()
 
@@ -249,8 +246,8 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
     def __init__(self, action):
         super().__init__(action)
-        self.vjoy_device_id = action.vjoy_device_id
-        self.vjoy_input_id = action.vjoy_input_id
+        self.vjoy_device_id = action.getVjoyDeviceId(action.category_id, action.control_id)
+        self.vjoy_input_id = action.getVjoyInputId(action.category_id, action.control_id)
         self.input_type = action.input_type
         self.axis_mode = action.axis_mode
         self.axis_scaling = action.axis_scaling
@@ -377,19 +374,44 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
         gremlin.util.log("MapToSC::Init")
 
-        # Set vjoy ids to None so we know to pick the next best one
-        # automatically
-        self.vjoy_device_id = None
-        self.vjoy_input_id = None
         self.input_type = self.parent.parent.input_type
         self.axis_mode = "absolute"
         self.axis_scaling = 1.0
         self.category_id = None
-        self.controls_id = None
+        self.control_id = None
         self.parent_input_item = parent.parent
         self.settings = parent.get_settings()
         self.description = ""
 
+        reader = mapping_reader.ControlsMappingReader(self.settings.sc_controls_mapping)
+        self.controls_list = reader.getControlsMapping()
+        el = gremlin.event_handler.EventListener()
+        el.controls_mapping_changed.connect(self._reload_control_list)
+
+    def _reload_control_list(self, controls_mapping):
+        reader = mapping_reader.ControlsMappingReader(controls_mapping)
+        reader.resetControlsMapping(controls_mapping)
+
+    def getVjoyDeviceId(self, category, control):
+        # Finally get the selected control from the controls list
+        category_entry = next((x for x in self.controls_list if x["category_id"] == category), None) 
+        control_entry = next((x for x in category_entry["values"] if x["id"] == control), None)
+        vjoy_device_id = control_entry["vjoy"]
+        return vjoy_device_id
+
+    def getVjoyInputId(self, category, control):
+        category_entry = next((x for x in self.controls_list if x["category_id"] == category), None) 
+        control_entry = next((x for x in category_entry["values"] if x["id"] == control), None)
+        vjoy_input_type = control_entry["type"]
+        if "axis" in vjoy_input_type:
+            vjoy_input_id = control_entry["axis"]
+        elif "button" in vjoy_input_type:
+            vjoy_input_id = control_entry["button"]
+        elif "hat" in vjoy_input_type:
+            vjoy_input_id = control_entry["hat"]
+        elif "keyboard" in vjoy_input_type:
+            vjoy_input_id = control_entry["keyboard"]
+        return vjoy_input_id
 
     def clean_up(self):
         if self.parent_input_item.description == self.description:
@@ -454,7 +476,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
 
             self.vjoy_device_id = safe_read(node, "vjoy", int)
             self.category_id = safe_read(node, "category", int)
-            self.controls_id = safe_read(node, "controls", int)
+            self.control_id = safe_read(node, "controls", int)
 
             if self.get_input_type() == InputType.JoystickAxis and \
                     self.input_type == InputType.JoystickAxis:
@@ -464,7 +486,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
             self.vjoy_input_id = None
             self.vjoy_device_id = None
             self.category_id = None
-            self.controls_id = None
+            self.control_id = None
 
     def _generate_xml(self):
         """Returns an XML node encoding this action's data.
@@ -485,7 +507,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
                 str(self.vjoy_input_id)
             )
         node.set("category", str(self.category_id))
-        node.set("controls", str(self.controls_id))
+        node.set("controls", str(self.control_id))
 
         if self.get_input_type() == InputType.JoystickAxis and \
                 self.input_type == InputType.JoystickAxis:
@@ -500,7 +522,7 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         :return True if the action is configured correctly, False otherwise
         """
         gremlin.util.log("MapToSC::is valid " + time.strftime("%a, %d %b %Y %H:%M:%S"))
-        return not(self.category_id is None or self.controls_id is None)              
+        return not(self.category_id is None or self.control_id is None)              
 
 
 class ScControlsSelector(QtWidgets.QWidget):
@@ -513,7 +535,7 @@ class ScControlsSelector(QtWidgets.QWidget):
         Controls will be mapped to proper vJoy Device and Input
     """
 
-    def __init__(self, change_cb, valid_types, settings, parent=None):
+    def __init__(self, change_cb, valid_types, control_list, parent=None):
         super().__init__(parent)
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
@@ -534,8 +556,7 @@ class ScControlsSelector(QtWidgets.QWidget):
             self.current_input_type = "unknown"
         self.valid_types = valid_types
 
-        reader = mapping_reader.ControlsMappingReader(settings.sc_controls_mapping)
-        self.controls_list = reader.getControlsMapping()
+        self.controls_list = control_list
 
         self.category_dropdown = None
         self.controls_dropdown = []
@@ -544,18 +565,11 @@ class ScControlsSelector(QtWidgets.QWidget):
 
         self._create_controls_dropdown()
 
-    def controls_mapping_changed(self, controls_mapping):
-        reader = mapping_reader.ControlsMappingReader(controls_mapping)
-        reader.resetControlsMapping(controls_mapping)
-
-
     def get_selection(self):
         gremlin.util.log("ControlsSelector::get selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         category_id = None
-        controls_id = None
+        control_id = None
         input_type = None
-        vjoy_device_id = None
-        vjoy_input_id = None
 
         # Retrieve the IDs for the category and control
         # First get the Category Id and corresponding control list from registry using the dropdown index
@@ -565,43 +579,31 @@ class ScControlsSelector(QtWidgets.QWidget):
         # Then get the control Id using the control index from the dropdown (index is based on selected category)
         control_index = self.controls_dropdown[self.category_dropdown.currentIndex()].currentIndex()
         if control_index < 0: control_index = 0
-        controls_id = category_control_list["values"][control_index]
+        control_id = category_control_list["values"][control_index]
 
         # Finally get the selected control from the controls list
         category_entry = next((x for x in self.controls_list if x["category_id"] == category_id), None) 
-        control_entry = next((x for x in category_entry["values"] if x["id"] == controls_id), None)  
+        control_entry = next((x for x in category_entry["values"] if x["id"] == control_id), None)  
 
-        # Fill in the vjoy fields based on the selected category and control
-        vjoy_device_id = control_entry["vjoy"]
-        vjoy_input_type = control_entry["type"]
-        if "axis" in vjoy_input_type:
-            vjoy_input_id = control_entry["axis"]
-        elif "button" in vjoy_input_type:
-            vjoy_input_id = control_entry["button"]
-        elif "hat" in vjoy_input_type:
-            vjoy_input_id = control_entry["hat"]
-        elif "keyboard" in vjoy_input_type:
-            vjoy_input_id = control_entry["keyboard"]
-         
+        # vJoy fields will be obtained on the fly from the Control Mapping
+                 
         input_type = self.valid_types[0]
         description =  control_entry["name"]
 
         return {
             "category_id": category_id,
-            "controls_id": controls_id,
+            "control_id": control_id,
             "input_type": input_type,
-            "vjoy_device_id": vjoy_device_id,
-            "vjoy_input_id": vjoy_input_id,
             "description": description
         }
 
-    def set_selection(self, input_type, category_id, controls_id):
+    def set_selection(self, input_type, category_id, control_id):
         gremlin.util.log("ControlsSelector::set selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         if category_id not in self._category_registry:
             return
 
         control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
-        if next((x for x in control["values"] if x["id"] == controls_id), None) == None:
+        if next((x for x in control["values"] if x["id"] == control_id), None) == None:
             return
 
         # # Get the index of the combo box associated with this category
@@ -612,7 +614,7 @@ class ScControlsSelector(QtWidgets.QWidget):
 
         # Retrieve the index of the correct entry in the combobox
         category_control_list = next((x for x in self.controls_registry if x["category_id"] == category_id), None)
-        control_index = [index for (index, value) in enumerate(category_control_list["values"]) if value == controls_id][0]
+        control_index = [index for (index, value) in enumerate(category_control_list["values"]) if value == control_id][0]
 
         # Select and display correct combo boxes and entries within
         for entry in self.controls_dropdown:
