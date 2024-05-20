@@ -203,6 +203,9 @@ class EventListener(QtCore.QObject):
 
     # occurs when a new controls mapping is defined
     controls_mapping_changed = QtCore.Signal(str)
+
+    # occurs when a profile needs reload
+    reload_profile = QtCore.Signal(str)
         
 
     def __init__(self):

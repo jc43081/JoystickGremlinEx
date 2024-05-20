@@ -221,6 +221,7 @@ class ControlsMapping(QtWidgets.QGroupBox):
         super().__init__(parent)
 
         self.profile_data = profile_data
+        self.current_text = profile_data.sc_controls_mapping
 
         self.main_layout = QtWidgets.QHBoxLayout(self)
         self._create_ui()
@@ -233,7 +234,10 @@ class ControlsMapping(QtWidgets.QGroupBox):
         line_edit = QtWidgets.QLineEdit()
         line_edit.setText(self.profile_data.sc_controls_mapping)
         line_edit.textChanged.connect(self._update_cb)
+        line_button = QtWidgets.QPushButton("Update Profile")
+        line_button.clicked.connect(self._update_profile)
         self.main_layout.addWidget(line_edit)
+        self.main_layout.addWidget(line_button)
         self.main_layout.addStretch()
 
     def _update_cb(self, text):
@@ -241,10 +245,14 @@ class ControlsMapping(QtWidgets.QGroupBox):
 
         :param index the index of the entry selected
         """
-        self.profile_data.sc_controls_mapping = text
+        self.current_text = text
+
+    def _update_profile(self):
+        self.profile_data.sc_controls_mapping = self.current_text
         el = gremlin.event_handler.EventListener()
         el.controls_mapping_changed.emit(self.profile_data.sc_controls_mapping)
-
+        config = gremlin.config.Configuration()
+        el.reload_profile.emit(config.last_profile)
 
 class VJoyAxisDefaultsWidget(QtWidgets.QWidget):
 

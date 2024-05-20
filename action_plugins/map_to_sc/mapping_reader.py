@@ -40,5 +40,7 @@ class ControlsMappingReader(metaclass=Singleton):
     
 
     def resetControlsMapping(self, controls_mapping):
-        self.controls_list = []
-        self.controls_mapping = controls_mapping
+        # Only reset if the controls_mapping changed
+        if (self.controls_mapping != controls_mapping):
+            self.controls_list = []
+            self.controls_mapping = controls_mapping

@@ -1470,6 +1470,9 @@ class Profile():
         tree = ElementTree.parse(fname)
         root = tree.getroot()
 
+        # Parse settings entries
+        self.settings.from_xml(root.find("settings"))
+
         # Parse each device into separate DeviceConfiguration objects
         for child in root.iter("device"):
             device = Device(self)
@@ -1515,9 +1518,6 @@ class Profile():
         # Parse merge axis entries
         for child in root.iter("merge-axis"):
             self.merge_axes.append(self._parse_merge_axis(child))
-
-        # Parse settings entries
-        self.settings.from_xml(root.find("settings"))
 
         # Parse plugin entries
         for child in root.findall("plugins/plugin"):
