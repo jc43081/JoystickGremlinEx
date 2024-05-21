@@ -495,17 +495,6 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         """
         gremlin.util.log("MapToSC::generate xml " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         node = ElementTree.Element("map-to-sc")
-        node.set("vjoy", str(self.vjoy_device_id))
-        if self.input_type == InputType.Keyboard:
-            node.set(
-                InputType.to_string(InputType.JoystickButton),
-                str(self.vjoy_input_id)
-            )
-        else:
-            node.set(
-                InputType.to_string(self.input_type),
-                str(self.vjoy_input_id)
-            )
         node.set("category", str(self.category_id))
         node.set("controls", str(self.control_id))
 
