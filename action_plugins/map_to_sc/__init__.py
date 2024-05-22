@@ -295,7 +295,7 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         elif self.input_type == InputType.JoystickHat:
 
             joystick_handling.VJoyProxy()[self.vjoy_device_id] \
-                .hat(self.vjoy_input_id).direction = value.currents
+                .button(self.vjoy_input_id).is_pressed = value.current
 
         return True
 
@@ -457,24 +457,6 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         """
         gremlin.util.log("MapToSC::parse xml " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         try:
-            if "axis" in node.attrib:
-                self.input_type = InputType.JoystickAxis
-                self.vjoy_input_id = safe_read(node, "axis", int)
-            elif "button" in node.attrib:
-                self.input_type = InputType.JoystickButton
-                self.vjoy_input_id = safe_read(node, "button", int)
-            elif "hat" in node.attrib:
-                self.input_type = InputType.JoystickHat
-                self.vjoy_input_id = safe_read(node, "hat", int)
-            elif "keyboard" in node.attrib:
-                self.input_type = InputType.Keyboard
-                self.vjoy_input_id = safe_read(node, "button", int)
-            else:
-                raise gremlin.error.GremlinError(
-                    f"Invalid remap type provided: {node.attrib}"
-                )
-
-            self.vjoy_device_id = safe_read(node, "vjoy", int)
             self.category_id = safe_read(node, "category", int)
             self.control_id = safe_read(node, "controls", int)
 
@@ -483,8 +465,6 @@ class MapToSc(gremlin.base_classes.AbstractAction):
                 self.axis_mode = safe_read(node, "axis-type", str, "absolute")
                 self.axis_scaling = safe_read(node, "axis-scaling", float, 1.0)
         except ProfileError:
-            self.vjoy_input_id = None
-            self.vjoy_device_id = None
             self.category_id = None
             self.control_id = None
 
