@@ -295,7 +295,7 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         elif self.input_type == InputType.JoystickHat:
 
             joystick_handling.VJoyProxy()[self.vjoy_device_id] \
-                .hat(self.vjoy_input_id).direction = value.currents
+                .button(self.vjoy_input_id).is_pressed = value.current
 
         return True
 
