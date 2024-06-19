@@ -34,6 +34,7 @@ from gremlin.profile import safe_format, safe_read
 import gremlin.ui.common
 import gremlin.ui.input_item
 import gremlin.ui.device_tab
+from gremlin.util import *
 
 class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
@@ -142,7 +143,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         # input_type information
         if input_type is None:
             input_type = InputType.JoystickButton
-            logging.getLogger("system").warning("None as input type encountered")
+            log_sys_warn("None as input type encountered")
 
         try:
             self.controls_selector.set_selection(
@@ -170,7 +171,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
                 "Default values have been set for the input, but they are "
                 "not what has been specified."
             )
-            logging.getLogger("system").error(str(e))
+            log_sys_error(str(e))
 
     def save_controls_changes(self):
         """Saves UI contents to the profile data storage."""
@@ -196,7 +197,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             if input_type_changed:
                 self.action_modified.emit()
         except gremlin.error.GremlinError as e:
-            logging.getLogger("system").error(str(e))
+            log_sys_error(str(e))
 
 
     def _update_input_item_description(self):
