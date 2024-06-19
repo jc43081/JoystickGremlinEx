@@ -44,7 +44,7 @@ def sanitize_path(path):
     :param path path to sanitize
     :return sanitized file path
     """
-    return path.replace("\\", "__").replace("-", "_")
+    return path.replace("\\", "__").replace("-", "_").replace("@", "_").replace("+", "_")
 
 
 def create_data_for_file(path):
@@ -116,14 +116,14 @@ def create_folder_structure(folder_list):
     for folder in folder_list:
         dirs = folder.split("\\")
         for i in range(len(dirs)):
-            path = "__".join(dirs[:i+1])
+            path = sanitize_path("__".join(dirs[:i+1]))
             if path not in structure:
                 structure[path] = create_node(
                     "Directory",
-                    {"Id": path, "Name": dirs[i]}
+                    {"Id": sanitize_path(path), "Name": dirs[i]}
                 )
                 if i > 0:
-                    parent_path = "__".join(dirs[:i])
+                    parent_path = sanitize_path("__".join(dirs[:i]))
                     structure[parent_path].append(structure[path])
 
         # Link top level folders to the install folder
@@ -226,7 +226,7 @@ def create_document():
             #"Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
             #"Id": "7cdb8375-66a1-4114-be79-b17027e8c0df", # 13.40.7ex
             #"Id": "739095a7-19cc-4154-ac9c-c51f5f516527", # 13.40.8ex
-            "ProductCode": "ac4c090a-abfa-4a2c-a513-e6ceed6024c8", # 13.40.12-sc.1
+            "ProductCode": "183f7e3a-2b16-409a-b857-365e7714a846", # 13.40.13-sc.1
             "UpgradeCode": "1f5d614b-6cec-47d8-90e3-40f7e7458f7a",
             "Language": "1033",
             "Codepage": "1252",
@@ -360,7 +360,7 @@ def create_shortcuts(package):
     )
     n3 = create_node(
         "Component",
-        {"Id": "ProgramMenuDir", "Guid": "11ab7593-4b4e-470d-8a56-4791b40c0838"}
+        {"Id": "ProgramMenuDir", "Guid": "a9736055-0450-47f3-96a5-e38b2ab7218d"}
     )
     n3.append(create_node(
         "RemoveFolder",
