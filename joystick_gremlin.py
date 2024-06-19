@@ -67,7 +67,7 @@ from PySide6 import QtCore
 from gremlin.ui.ui_gremlin import Ui_Gremlin
 from gremlin.input_devices import remote_state
 
-APPLICATION_NAME = "Joystick Gremlin Ex"
+APPLICATION_NAME = "Joystick Gremlin SC"
 APPLICATION_VERSION = "13.40.13-sc.1"
 
 
@@ -1634,7 +1634,7 @@ if __name__ == "__main__":
 
     syslog = logging.getLogger("system")
 
-    syslog.info(F"Joystick Gremlin Ex version {Version().version}")
+    syslog.info(F"Joystick Gremlin SC version {Version().version}")
         
     # Initialize the vjoy interface 
     from vjoy.vjoy_interface import VJoyInterface

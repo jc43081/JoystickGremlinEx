@@ -231,7 +231,7 @@ def display_error(msg):
 
     box = QtWidgets.QMessageBox(
         QtWidgets.QMessageBox.Critical,
-        "Joystick Gremlin Ex Error",
+        "Joystick Gremlin SC Error",
         msg,
         QtWidgets.QMessageBox.Ok
     )
