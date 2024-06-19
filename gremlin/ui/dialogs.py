@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,12 +22,18 @@ import winreg
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import dill
+import dinput
 
 import gremlin
-from gremlin.theme import ThemeQIcon
+from PySide6.QtGui import QIcon as load_icon
+from PySide6.QtWidgets import QMessageBox
+from gremlin.clipboard import Clipboard
+import gremlin.config
+import gremlin.joystick_handling
 from joystick_gremlin import GremlinUi
 from . import common, ui_about
+from gremlin.common import load_icon
+import logging
 
 
 class OptionsUi(common.BaseDialogUi):
@@ -108,6 +114,18 @@ class OptionsUi(common.BaseDialogUi):
         )
         self.start_with_windows.clicked.connect(self._start_windows)
         self.start_with_windows.setChecked(self._start_windows_enabled())
+
+        # Persist clipboard to file (user profile)
+        self.persist_clipboard = QtWidgets.QCheckBox(
+            "Persist clipboard data between sessions"
+        )
+        self.persist_clipboard.clicked.connect(self._persist_clipboard)
+        self.persist_clipboard.setChecked(self._persist_clipboard_enabled())
+
+        # verbose output
+        self.verbose = QtWidgets.QCheckBox("Verbose log")
+        self.verbose.clicked.connect(self._verbose)
+        self.verbose.setChecked(self.config.verbose)
 
         # Show message on mode change
         self.show_mode_change_message = QtWidgets.QCheckBox(
@@ -216,7 +234,10 @@ class OptionsUi(common.BaseDialogUi):
         self.general_layout.addWidget(self.activate_on_launch)
         self.general_layout.addWidget(self.start_minimized)
         self.general_layout.addWidget(self.start_with_windows)
+        self.general_layout.addWidget(self.persist_clipboard)
+        self.general_layout.addWidget(self.verbose)
         self.general_layout.addWidget(self.show_mode_change_message)
+
         self.general_layout.addLayout(self.default_action_layout)
         self.general_layout.addLayout(self.macro_axis_polling_layout)
         self.general_layout.addLayout(self.macro_axis_minimum_change_layout)
@@ -257,16 +278,16 @@ If this option is on, the last active profile will remain active until a differe
             self._show_executable
         )
         self.executable_add = QtWidgets.QPushButton()
-        self.executable_add.setIcon(ThemeQIcon("gfx/button_add.png"))
+        self.executable_add.setIcon(load_icon("gfx/button_add.png"))
         self.executable_add.clicked.connect(self._new_executable)
         self.executable_remove = QtWidgets.QPushButton()
-        self.executable_remove.setIcon(ThemeQIcon("gfx/button_delete.png"))
+        self.executable_remove.setIcon(load_icon("gfx/button_delete.png"))
         self.executable_remove.clicked.connect(self._remove_executable)
         self.executable_edit = QtWidgets.QPushButton()
-        self.executable_edit.setIcon(ThemeQIcon("gfx/button_edit.png"))
+        self.executable_edit.setIcon(load_icon("gfx/button_edit.png"))
         self.executable_edit.clicked.connect(self._edit_executable)
         self.executable_list = QtWidgets.QPushButton()
-        self.executable_list.setIcon(ThemeQIcon("gfx/list_show.png"))
+        self.executable_list.setIcon(load_icon("gfx/list_show.png"))
         self.executable_list.clicked.connect(self._list_executables)
 
         self.executable_layout.addWidget(self.executable_label)
@@ -282,7 +303,7 @@ If this option is on, the last active profile will remain active until a differe
         self.profile_field.textChanged.connect(self._update_profile)
         self.profile_field.editingFinished.connect(self._update_profile)
         self.profile_select = QtWidgets.QPushButton()
-        self.profile_select.setIcon(ThemeQIcon("gfx/button_edit.png"))
+        self.profile_select.setIcon(load_icon("gfx/button_edit.png"))
         self.profile_select.clicked.connect(self._select_profile)
 
         self.profile_layout.addWidget(self.profile_field)
@@ -437,6 +458,19 @@ If this option is on, the last active profile will remain active until a differe
         self.config.start_minimized = clicked
         self.config.save()
 
+    def _persist_clipboard(self, clicked):
+        self.config.persist_clipboard = clicked
+        self.config.save()
+
+    def _persist_clipboard_enabled(self):
+        return self.config.persist_clipboard
+    
+    def _verbose(self, clicked):
+        ''' stores verbose setting '''
+        self.config.verbose = clicked
+        self.config.save
+
+
     def _start_windows(self, clicked):
         """Set registry entry to launch Joystick Gremlin on login.
 
@@ -460,7 +494,7 @@ If this option is on, the last active profile will remain active until a differe
         """
         key_handle = winreg.OpenKey(
                 winreg.HKEY_CURRENT_USER,
-                r"Software\Microsoft\Windows\CurrentVersion\Run"
+                "Software\\Microsoft\\Windows\\CurrentVersion\\Run"
             )
         key_info = winreg.QueryInfoKey(key_handle)
 
@@ -469,6 +503,9 @@ If this option is on, the last active profile will remain active until a differe
             if value_info[0] == "Joystick Gremlin":
                 return True
         return False
+    
+
+
 
     def _highlight_input(self, clicked):
         """Stores preference for input highlighting.
@@ -896,6 +933,16 @@ class ModeManagerUi(common.BaseDialogUi):
 
         self._populate_mode_layout()
 
+    def _get_mode_list(self):
+        mode_list = {}
+        for device in self._profile.devices.values():
+            for mode in device.modes.values():
+                if mode.name not in mode_list:
+                    if mode.name:
+                        mode_list[mode.name] = mode.inherit
+        return mode_list
+
+
     def _populate_mode_layout(self):
         """Generates the mode layout UI displaying the different modes."""
         # Clear potentially existing content
@@ -906,14 +953,7 @@ class ModeManagerUi(common.BaseDialogUi):
         self.mode_callbacks = {}
 
         # Obtain mode names and the mode they inherit from
-        mode_list = {}
-        for device in self._profile.devices.values():
-            for mode in device.modes.values():
-                if mode.name not in mode_list:
-                    # FIXME: somewhere a mode's name is not set
-                    if mode.name is None:
-                        continue
-                    mode_list[mode.name] = mode.inherit
+        mode_list = self._get_mode_list()
 
         # Add header information
         self.mode_layout.addWidget(QtWidgets.QLabel("<b>Name</b>"), 0, 0)
@@ -938,7 +978,7 @@ class ModeManagerUi(common.BaseDialogUi):
 
             # Rename mode button
             self.mode_rename[mode] = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_edit.png"), ""
+                load_icon("gfx","button_edit.png"), ""
             )
             self.mode_layout.addWidget(self.mode_rename[mode], row, 2)
             self.mode_rename[mode].clicked.connect(
@@ -946,7 +986,7 @@ class ModeManagerUi(common.BaseDialogUi):
             )
             # Delete mode button
             self.mode_delete[mode] = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/mode_delete"), ""
+                load_icon("gfx","mode_delete.svg"), ""
             )
             self.mode_layout.addWidget(self.mode_delete[mode], row, 3)
             self.mode_delete[mode].clicked.connect(
@@ -988,7 +1028,11 @@ class ModeManagerUi(common.BaseDialogUi):
         :param mode the mode to remove
         :return lambda function to perform the removal
         """
+
+        # modes can be deleted except the last one
         return lambda: self._delete_mode(mode)
+        
+
 
     def _change_mode_inheritance(self, mode, inherit):
         """Updates the inheritance information of a given mode.
@@ -1063,6 +1107,12 @@ class ModeManagerUi(common.BaseDialogUi):
         :param mode_name the name of the mode to delete
         """
         # Obtain mode from which the mode we want to delete inherits
+
+        mode_list = self._get_mode_list()
+        if len(mode_list.keys()) == 1:
+            QMessageBox.warning(self, "Warning","Cannot delete last mode - one mode must exist")
+            return
+
         parent_of_deleted = None
         for mode in list(self._profile.devices.values())[0].modes.values():
             if mode.name == mode_name:
@@ -1124,55 +1174,137 @@ class DeviceInformationUi(common.BaseDialogUi):
         self.devices = gremlin.joystick_handling.joystick_devices()
 
         self.setWindowTitle("Device Information")
-        self.main_layout = QtWidgets.QGridLayout(self)
-        w = 230
 
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>Name</b>"), 0, 0)
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>Axes</b>"), 0, 1)
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>Buttons</b>"), 0, 2)
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>Hats</b>"), 0, 3)
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>Vendor ID</b>"), 0, 4)
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>Product ID</b>"), 0, 5)
-        self.main_layout.addWidget(QtWidgets.QLabel("<b>GUID"), 0, 6)
+        self.main_layout = QtWidgets.QVBoxLayout(self)
+
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_widget = QtWidgets.QWidget()
+        self.scroll_layout = QtWidgets.QVBoxLayout()
+        self.table = QtWidgets.QTableWidget()
+        self.table.setSortingEnabled(True)
+
+        self.scroll_widget.setLayout(self.scroll_layout)
+        self.scroll_area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        self.scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+
+        # Configure the scroll area
+        self.scroll_area.setMinimumWidth(400)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setWidget(self.scroll_widget)  
+
+        self.scroll_layout.addWidget(self.table)     
+
+        self.main_layout.addWidget(self.scroll_area)
+        
+
+        # row headers
+
+        headers = [
+            "Device Name",
+            "Axis Count",
+            "Buttons Count",
+            "Hat Count",
+            "Vendor ID",
+            "Product ID",
+            "GUID",
+            "Device name (nocase)"
+        ]
+
+        # table data 
+
+
+        
+        self.table.setColumnCount(len(headers))
+        self.table.setRowCount(len(self.devices))
+        self.table.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.AdjustToContents)
+        self.table.setHorizontalHeaderLabels(headers)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setContextMenuPolicy(QtCore.Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._context_menu_cb)
+        self.table.viewport().installEventFilter(self)
+
+        self.menu = None # context menu for the table
+        self.menu_item = None # the cell item the menu applies to
 
         for i, entry in enumerate(self.devices):
-            w_name = QtWidgets.QLineEdit()
-            w_name.setText(entry.name)
-            w_name.setReadOnly(True)
-            w_name.setMinimumWidth(w)
-            w_name.setMaximumWidth(w)
-            self.main_layout.addWidget(
-                w_name, i+1, 0
-            )
-            self.main_layout.addWidget(
-                QtWidgets.QLabel(str(entry.axis_count)), i+1, 1
-            )
-            self.main_layout.addWidget(
-                QtWidgets.QLabel(str(entry.button_count)), i+1, 2
-            )
-            self.main_layout.addWidget(
-                QtWidgets.QLabel(str(entry.hat_count)), i+1, 3
-            )
-            self.main_layout.addWidget(
-                QtWidgets.QLabel(f"{entry.vendor_id:04X}"), i+1, 4
-            )
-            self.main_layout.addWidget(
-                QtWidgets.QLabel(f"{entry.product_id:04X}"), i+1, 5
-            )
-            guid_field = QtWidgets.QLineEdit()
-            guid_field.setText(str(entry.device_guid))
-            guid_field.setReadOnly(True)
-            guid_field.setMinimumWidth(w)
-            guid_field.setMaximumWidth(w)
-            self.main_layout.addWidget(guid_field, i+1, 6)
+            # w_name = QtWidgets.QLineEdit()
+            # w_name.setText(entry.name)
+            # w_name.setReadOnly(True)
+            # w_name.setMinimumWidth(w)
+            # w_name.setMaximumWidth(w)
+            self.table.setItem(i, 0, QtWidgets.QTableWidgetItem(entry.name))
+            self.table.setItem(i, 1, QtWidgets.QTableWidgetItem(str(entry.axis_count)))
+            self.table.setItem(i, 2, QtWidgets.QTableWidgetItem(str(entry.button_count)))
+            self.table.setItem(i, 3, QtWidgets.QTableWidgetItem(str(entry.hat_count)))
+            self.table.setItem(i, 4, QtWidgets.QTableWidgetItem(f"{entry.vendor_id:04X}"))
+            self.table.setItem(i, 5, QtWidgets.QTableWidgetItem(f"{entry.product_id:04X}"))
+
+
+            # guid_field = QtWidgets.QLineEdit()
+            # guid_field.setText(str(entry.device_guid))
+            # guid_field.setReadOnly(True)
+            # guid_field.setMinimumWidth(w)
+            # guid_field.setMaximumWidth(w)
+
+            self.table.setItem(i, 6, QtWidgets.QTableWidgetItem(str(entry.device_guid)))
+            self.table.setItem(i, 7, QtWidgets.QTableWidgetItem(entry.name.lower()))
+
+        # resize
+        self.table.resizeColumnsToContents()
+
+        # toolbar 
+        
+        self.tool_widget = QtWidgets.QWidget()
+        self.tool_layout = QtWidgets.QHBoxLayout()
+        self.tool_widget.setLayout(self.tool_layout)
 
         self.script_copy_button = QtWidgets.QPushButton("Generate plugin script header")
         self.script_copy_button.clicked.connect(self._copy_to_script)
-        self.main_layout.addWidget(self.script_copy_button, len(self.devices)+1, 1)
+        self.tool_layout.addWidget(self.script_copy_button)
 
         self.close_button = QtWidgets.QPushButton("Close")
         self.close_button.clicked.connect(lambda: self.close())
-        self.main_layout.addWidget(self.close_button, len(self.devices)+1, 3)
+        self.tool_layout.addWidget(self.close_button)
+
+        self.main_layout.addWidget(self.tool_widget)
+
+    def eventFilter(self, source, event):
+        ''' table event filter '''
+        if isinstance(event, QtGui.QSinglePointEvent) and event.type() == QtCore.QEvent.MouseButtonPress and source is self.table.viewport():
+            button = event.buttons()
+            if button == QtCore.Qt.RightButton:
+                pos = event.position().toPoint()
+                item = self.table.itemAt(pos)
+                if item is not None:
+                    verbose = gremlin.config.Configuration().verbose        
+                    if verbose:
+                        logging.getLogger("system").info(f"DeviceInfo: context click on: {item.row()} {item.column()} {item.text()}")
+                    self.menu = QtWidgets.QMenu(self)
+                    action = QtWidgets.QWidgetAction(self)
+                    label = QtWidgets.QLabel(self)
+                    label.setText("Copy")
+                    label.setMargin(4)
+                    action.setDefaultWidget(label)
+                    action.triggered.connect(self._menu_copy)
+                    self.menu.addAction(action)
+                    self.menu_item = item
+        return super().eventFilter(source, event)
+
+    def _menu_copy(self, widget):
+        ''' handles copy operation'''
+        item = self.menu_item
+        if item:
+            # copy the data to the clipboard
+            clipboard = Clipboard()
+            clipboard.set_windows_clipboard_text(item.text())
+            verbose = gremlin.config.Configuration().verbose
+            if verbose:
+                logging.getLogger("system").info(f"DeviceInfo: copy to clipboard Item: {item.row()} {item.column()} {item.text()}")
+
+    def _context_menu_cb(self, loc):
+        ''' context menu for the table '''
+        if self.menu:
+            self.menu.exec(self.table.mapToGlobal(loc))
 
     def _copy_to_script(self):
         ''' copies device entries to clipboard in script format '''
@@ -1217,8 +1349,10 @@ class DeviceInformationUi(common.BaseDialogUi):
             for line in a_map[mode_name]:
                 script += line + "\n"
 
-        app = QtWidgets.QApplication.instance()
-        app.clipboard().setText(script)
+        # set the clipboard data
+        clipboard = Clipboard()
+        clipboard.set_windows_clipboard_text(script)
+        
 
 
 
@@ -1251,7 +1385,7 @@ class SwapDevicesUi(common.BaseDialogUi):
         device_layout = QtWidgets.QGridLayout()
         for i, data in enumerate(device_list):
             # Ignore the keyboard
-            if data.device_guid == dill.GUID_Keyboard:
+            if data.device_guid == dinput.GUID_Keyboard:
                 continue
 
             # Ignore devices with no remappable entries

@@ -30,16 +30,17 @@ from PySide6 import QtCore
 import gremlin.common
 import gremlin.keyboard
 import gremlin.types
-from dill import DILL, GUID, GUID_Invalid
+from dinput import DILL, GUID, GUID_Invalid
 
 from . import common, error, event_handler, joystick_handling, util
-from gremlin.common import InputType
+
 import win32api
 import gremlin.sendinput, gremlin.tts
 
 import socketserver, socket, msgpack
 import enum
 
+from gremlin.singleton_decorator import SingletonDecorator
 
 
 syslog = logging.getLogger("system")
@@ -66,6 +67,7 @@ class VjoyAction(enum.Enum):
     VJoyEnableLocalAndRemote = 16 # enables concurrent local/remote control
     VJoyEnablePairedRemote = 17 # enables primary fire one and two on remote client
     VJoyDisablePairedRemote = 18 # disable primary fire one and two on remote client
+    VjoyButtonRelease = 19 # action button release (clear a button if set)
 
     # VjoyMergeAxis = 17 # merges two axes into one (usually used to combine toe-brakes into a single axis)
 
@@ -105,7 +107,7 @@ class VjoyAction(enum.Enum):
         if action == VjoyAction.VJoyAxis:
             return "Maps a vjoy axis"
         elif action == VjoyAction.VJoyButton:
-            return "Maps to a vjoy button"
+            return "Press a vjoy button"
         elif action == VjoyAction.VJoyHat:
             return "Maps to a vjoy hat"
         elif action == VjoyAction.VJoyInvertAxis:
@@ -142,6 +144,8 @@ class VjoyAction(enum.Enum):
             return "Disables local control mode (local input will be disabled)"
         elif action == VjoyAction.VJoyDisableRemote:
             return "Disables remote control mode (remote clients will not get inputs except for paired commands)"
+        elif action == VjoyAction.VjoyButtonRelease:
+            return "Releases a button"
         # elif action == VjoyAction.VjoyMergeAxis:
         #     return "Merges two axes into one"
         
@@ -192,6 +196,8 @@ class VjoyAction(enum.Enum):
             return "Disable local control"
         elif action == VjoyAction.VJoyDisableRemote:
             return "Disable remote control"
+        elif action == VjoyAction.VjoyButtonRelease:
+            return "Button release"
         
         msg  = f"Unknown [{action}]"
         syslog.debug(f"Warning: missing action name mapping: {msg}")
@@ -227,7 +233,7 @@ class InternalSpeech():
 			pass
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class RemoteControl():
     ''' holds remote control status information'''
 
@@ -846,7 +852,8 @@ class RPCGremlin():
         
         # stop the server loop
         self._keep_running = False
-        self._thread.join()
+        if self._thread.is_alive():
+            self._thread.join()
         self._thread = None
 
         syslog.debug("Gremlin RPC server stopped...")
@@ -894,7 +901,7 @@ class RemoteServer(QtCore.QObject):
 
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class RemoteClient(QtCore.QObject):
     """ Provides access to a remote Gremlin instance """
 
@@ -948,7 +955,8 @@ class RemoteClient(QtCore.QObject):
         if self._alive_thread:
             syslog.debug("Alive stop requested...")
             self._alive_thread_stop_requested = True
-            self._alive_thread.join()
+            if self._alive_thread.is_alive():
+                self._alive_thread.join()
             syslog.debug("Alive thread stopped")
             self._alive_thread = None
             
@@ -1392,9 +1400,9 @@ class JoystickProxy:
                 joy = JoystickWrapper(device_guid)
                 JoystickProxy.joystick_devices[device_guid] = joy
             else:
-                raise error.GremlinError(
-                    f"No device with guid {device_guid} exists"
-                )
+                syslog.warning(f"Requested device with guid {device_guid} not found in current hardware set")
+                return None
+
 
         return JoystickProxy.joystick_devices[device_guid]
 
@@ -1453,7 +1461,7 @@ class JoystickPlugin:
         return partial_fn(callback, joy=JoystickPlugin.joystick)
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class Keyboard(QtCore.QObject):
 
     """Provides access to the keyboard state."""
@@ -1551,7 +1559,7 @@ ButtonReleaseEntry = collections.namedtuple(
 )
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class ButtonReleaseActions(QtCore.QObject):
 
     """Ensures a desired action is run when a button is released."""
@@ -1673,7 +1681,7 @@ class ButtonReleaseActions(QtCore.QObject):
         self._current_mode = mode
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class JoystickInputSignificant:
 
     """Checks whether or not joystick inputs are significant."""
@@ -1693,6 +1701,7 @@ class JoystickInputSignificant:
         Returns:
             True if the event should be processed, False otherwise
         """
+        from gremlin.common import InputType
         self._mre_registry[event] = event
 
         if event.event_type == InputType.JoystickAxis:

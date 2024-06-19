@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -68,7 +68,9 @@ class ProcessMonitor(QtCore.QObject):
         """Stops monitoring the current process."""
         self.running = False
         if self._update_thread is not None:
-            self._update_thread.join()
+            if self._update_thread.is_alive():
+                self._update_thread.join()
+            self._update_thread = None
 
     def _update(self):
         """Monitors the active process for changes."""

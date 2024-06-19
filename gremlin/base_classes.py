@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,9 +21,12 @@ import enum
 import logging
 from xml.etree import ElementTree
 
-import dill
+import dinput
 
 import gremlin
+import gremlin.plugin_manager
+
+import gremlin.ui
 from . import common, error, execution_graph, plugin_manager, profile
 from gremlin.profile import parse_guid, safe_read, write_guid, Device
 
@@ -39,14 +42,22 @@ class ActivationRule(enum.Enum):
     All = 1
     Any = 2
 
-
 class AbstractCondition(metaclass=ABCMeta):
 
     """Base class of all individual condition representations."""
 
     def __init__(self):
         """Creates a new condition."""
-        self.comparison = ""
+        self._comparison = ""
+
+
+    @property
+    def comparison(self):
+        return self._comparison
+    
+    @comparison.setter
+    def comparison(self, value):
+        self._comparison = value
 
     @abstractmethod
     def from_xml(self, node):
@@ -69,7 +80,7 @@ class AbstractCondition(metaclass=ABCMeta):
 
         :return True if the condition is properly specified, False otherwise
         """
-        return self.comparison != ""
+        return self._comparison != ""
 
 
 class KeyboardCondition(AbstractCondition):
@@ -522,6 +533,10 @@ class AbstractAction(profile.ProfileData):
         ''' id setter'''
         self._id = value
 
+    @property
+    def action_type(self):
+        ''' type name of this action '''
+        return self._action_type
     
 
     def from_xml(self, node):
@@ -550,6 +565,9 @@ class AbstractAction(profile.ProfileData):
             if cond_node is not None:
                 self.activation_condition.from_xml(cond_node)
 
+        # record the type of this action
+        self._action_name = node.tag
+
     def to_xml(self):
         """Returns a XML node representing the instance's contents.
 
@@ -562,15 +580,6 @@ class AbstractAction(profile.ProfileData):
         # output the ID
         node.set("action_id", self.action_id)
         return node
-
-    def icon(self):
-        """Returns the icon to use when representing the action.
-
-        :return icon to use
-        """
-        raise error.MissingImplementationError(
-            "AbstractAction.icon not implemented in subclass"
-        )
 
     def requires_virtual_button(self):
         """Returns whether or not the action requires the use of a
@@ -606,6 +615,9 @@ class AbstractContainer(profile.ProfileData):
         """
         super().__init__(parent)
         self.action_sets = []
+        self.custom_action_sets = False # true if the container uses custom action sets (need a converter to product action_sets)
+        self._condition_enabled = True
+        self._virtual_button_enabled = True # determines if the callbacks can be virtualized or not - if not - the callback is "raw" to the functor
         self.activation_condition_type = None
         self.activation_condition = None
         self.virtual_button = None
@@ -626,6 +638,8 @@ class AbstractContainer(profile.ProfileData):
             self.device_input_type = None
 
 
+
+
     def _get_hardware_device(self, parent):
         ''' gets the hardware device attached to this action '''
         while parent and not isinstance(parent, Device):
@@ -634,6 +648,25 @@ class AbstractContainer(profile.ProfileData):
             return parent
         return None
     
+    @property
+    def condition_enabled(self):
+        ''' determines if condition tab is enabled '''
+        return self._condition_enabled
+    @condition_enabled.setter
+    def condition_enabled(self, value):
+        ''' determines if condition tab is enabled '''
+        self._condition_enabled = value
+
+    @property
+    def virtual_button_enabled(self):
+        ''' determines if virtual button tab is enabled and virtual buttons is enabled for functor callbacks'''
+        return self._virtual_button_enabled
+    @virtual_button_enabled.setter
+    def virtual_button_enabled(self, value):
+        ''' determines if virtual button tab is enabled and virtual buttons is enabled for functor callbacks'''
+        self._virtual_button_enabled = value
+
+
     @property
     def hardware_device(self):
         ''' gets the hardware device attached to this '''
@@ -704,7 +737,7 @@ class AbstractContainer(profile.ProfileData):
         # For a virtual button create a callback that sends VirtualButton
         # events and another callback that triggers of these events
         # like a button would.
-        if self.virtual_button is not None:
+        if self._virtual_button_enabled and self.virtual_button is not None:
             callbacks.append(execution_graph.CallbackData(
                 execution_graph.VirtualButtonProcess(self.virtual_button),
                 None
@@ -714,7 +747,7 @@ class AbstractContainer(profile.ProfileData):
                 gremlin.event_handler.Event(
                     gremlin.common.InputType.VirtualButton,
                     callbacks[-1].callback.virtual_button.identifier,
-                    device_guid=dill.GUID_Virtual,
+                    device_guid=dinput.GUID_Virtual,
                     is_pressed=True,
                     raw_value=True
                 )
@@ -765,10 +798,11 @@ class AbstractContainer(profile.ProfileData):
                 action_set = []
                 self._parse_action_xml(child, action_set)
                 self.action_sets.append(action_set)
-            else:
-                logging.getLogger("system").warning(
-                    f"Unknown node present: {child.tag}"
-                )
+            # update 5/30/24 - EMCS remove warning as custom action sets won't be read here
+            # else:
+            #     logging.getLogger("system").warning(
+            #         f"Unknown node present: {child.tag}"
+            #     )
 
     def _parse_action_xml(self, node, action_set):
         """Parses the XML content related to actions in an action-set.
@@ -830,20 +864,6 @@ class AbstractContainer(profile.ProfileData):
                 state = state & action.is_valid()
         return state
 
-        # # Check that no action set is empty
-        # for actions in [a for a in self.action_sets if a is not None]:
-        #     if len(actions) == 0:
-        #         state = False
-
-        # # Check state of all linked actions
-        # for actions in [a for a in self.action_sets if a is not None]:
-        #     for action in actions:
-        #         if action is None:
-        #             state = False
-        #         else:
-        #             state = state & action.is_valid()
-        # return state
-
     @abstractmethod
     def _is_container_valid(self):
         """Returns whether or not the container itself is valid.
@@ -851,3 +871,7 @@ class AbstractContainer(profile.ProfileData):
         :return True container data is valid, False otherwise
         """
         pass
+
+    def get_action_sets(self):
+        """ returns action sets - used for duplication (override if needed) """
+        return self.action_sets

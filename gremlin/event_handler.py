@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,9 @@ from threading import Thread, Timer
 
 from PySide6 import QtCore
 
-import dill
-from . import common, config, error, joystick_handling, windows_event_hook, macro, util
+import dinput
+from . import common, config, error, joystick_handling, windows_event_hook, macro, util, shared_state
+from gremlin.singleton_decorator import SingletonDecorator
 
 
 class Event:
@@ -137,7 +138,7 @@ class Event:
             return Event(
                 event_type=common.InputType.Keyboard,
                 identifier=(key.scan_code, key.is_extended),
-                device_guid=dill.GUID_Keyboard
+                device_guid=dinput.GUID_Keyboard
             )
         
         raise ValueError(f"Unable to handle parameter - not a valid key: {key}")
@@ -161,7 +162,8 @@ class StateChangeEvent:
         self.is_broadcast_enabled = is_broadcast_enabled
 
 
-@common.SingletonDecorator
+
+@SingletonDecorator
 class EventListener(QtCore.QObject):
 
     """Listens for keyboard and joystick events and publishes them
@@ -219,6 +221,7 @@ class EventListener(QtCore.QObject):
         # Calibration function for each axis of all devices
         self._calibrations = {}
 
+
         # Joystick device change update timeout timer
         self._device_update_timer = None
 
@@ -250,8 +253,10 @@ class EventListener(QtCore.QObject):
 
     def _run(self):
         """Starts the event loop."""
-        dill.DILL.set_device_change_callback(self._joystick_device_handler)
-        dill.DILL.set_input_event_callback(self._joystick_event_handler)
+        if not dinput.DILL.initalized:
+            dinput.DILL.init()
+        dinput.DILL.set_device_change_callback(self._joystick_device_handler)
+        dinput.DILL.set_input_event_callback(self._joystick_event_handler)
         while self._running:
             # Keep this thread alive until we are done
             time.sleep(0.1)
@@ -265,9 +270,12 @@ class EventListener(QtCore.QObject):
         :param data the joystick event
         """
 
+        verbose = config.Configuration().verbose
         
-        event = dill.InputEvent(data)
-        if event.input_type == dill.InputType.Axis:
+        event = dinput.InputEvent(data)
+        if event.input_type == dinput.InputType.Axis:
+            if verbose:
+                logging.getLogger("system").info(event)
             self.joystick_event.emit(Event(
                 event_type=common.InputType.JoystickAxis,
                 device_guid=event.device_guid,
@@ -275,14 +283,14 @@ class EventListener(QtCore.QObject):
                 value=self._apply_calibration(event),
                 raw_value=event.value
             ))
-        elif event.input_type == dill.InputType.Button:
+        elif event.input_type == dinput.InputType.Button:
             self.joystick_event.emit(Event(
                 event_type=common.InputType.JoystickButton,
                 device_guid=event.device_guid,
                 identifier=event.input_index,
                 is_pressed=event.value == 1
             ))
-        elif event.input_type == dill.InputType.Hat:
+        elif event.input_type == dinput.InputType.Hat:
             self.joystick_event.emit(Event(
                 event_type=common.InputType.JoystickHat,
                 device_guid=event.device_guid,
@@ -333,7 +341,7 @@ class EventListener(QtCore.QObject):
             self._keyboard_state[key_id] = is_pressed
             self.keyboard_event.emit(Event(
                 event_type=common.InputType.Keyboard,
-                device_guid=dill.GUID_Keyboard,
+                device_guid=dinput.GUID_Keyboard,
                 identifier=key_id,
                 is_pressed=is_pressed,
             ))
@@ -353,7 +361,7 @@ class EventListener(QtCore.QObject):
         if not event.is_injected:
             self.mouse_event.emit(Event(
                 event_type=common.InputType.Mouse,
-                device_guid=dill.GUID_Keyboard,
+                device_guid=dinput.GUID_Keyboard,
                 identifier=event.button_id,
                 is_pressed=event.is_pressed,
             ))
@@ -391,7 +399,7 @@ class EventListener(QtCore.QObject):
                 )
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class EventHandler(QtCore.QObject):
 
     """Listens to the inputs from multiple different input devices."""

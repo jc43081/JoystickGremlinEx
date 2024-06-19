@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,15 @@
 import importlib
 import logging
 import os
+import copy
 
 from . import common, error
+from gremlin.util import *
+
+from gremlin.singleton_decorator import SingletonDecorator
 
 
-@common.SingletonDecorator
+@SingletonDecorator
 class ContainerPlugins:
 
     """Handles discovery and handling of container plugins."""
@@ -35,8 +39,27 @@ class ContainerPlugins:
 
         self._tag_to_type_map = {}
         self._name_to_type_map = {}
+        # tracks all functors
+        self._functors = []
 
         self._create_maps()
+
+        self._parent_widget_map = {} # map of item data to QT widget main UI container widget
+        self._input_data_container_map = {} # map of item data to the actual containers created for it
+
+        
+    def reset_functors(self):
+        ''' clears functor tracking '''
+        self._functors = []
+
+    def register_functor(self, functor):
+        ''' registers a functor for latching purposes'''
+        if not functor in self._functors:
+            self._functors.append(functor)
+
+    @property
+    def functors(self):
+        return self._functors
 
     @property
     def repository(self):
@@ -45,6 +68,37 @@ class ContainerPlugins:
         :return dictionary containing all plugins found
         """
         return self._plugins
+    
+    def set_widget(self, item_data, widget):
+        ''' sets the associated parent widget of a container for the specific input type'''
+        self._parent_widget_map[item_data] = widget
+
+    def get_widget(self, item_data):
+        ''' gets the associated parent widget of a container for the specific input type '''
+        if item_data in self._parent_widget_map.keys():
+            return self._parent_widget_map[item_data]
+        return None
+    
+    def set_container_data(self, item_data, container):
+        if not item_data in self._input_data_container_map.keys():
+            self._input_data_container_map[item_data] = []
+        if not container in self._input_data_container_map[item_data]:
+            self._input_data_container_map[item_data].append(container)
+
+    def get_container(self, item_data):
+        if not item_data in self._input_data_container_map.keys():
+            return []
+        return self._input_data_container_map[item_data]
+    
+    def get_parent_widget(self, container):
+        ''' gets the parent widget of the given container '''
+        for item_data, containers in self._input_data_container_map.items():
+            for container_item in containers:
+                if container == container_item:
+                    return self.get_widget(item_data)
+        # not found for this container
+        return None
+
 
     @property
     def tag_map(self):
@@ -68,11 +122,19 @@ class ContainerPlugins:
 
     def _discover_plugins(self):
         """Processes known plugin folders for action plugins."""
-        for root, dirs, files in os.walk("container_plugins"):
+        plugin_folder = "container_plugins"
+        root_path = get_root_path()
+        walk_path = os.path.join(root_path, plugin_folder)
+        log_sys(f"Container plugin folder: {walk_path}")
+        if not os.path.isdir(walk_path):
+            raise error(f"Unable to find container plugins: {walk_path}")
+        
+        for root, dirs, files in os.walk(walk_path):
             for fname in [v for v in files if v == "__init__.py"]:
                 try:
                     folder, module = os.path.split(root)
-                    if folder != "container_plugins":
+
+                    if not folder.lower().endswith(plugin_folder):
                         continue
 
                     # Attempt to load the file and if it looks like a proper
@@ -82,8 +144,7 @@ class ContainerPlugins:
                     )
                     if "version" in plugin.__dict__:
                         self._plugins[plugin.name] = plugin.create
-                        logging.getLogger("system").debug(
-                            f"Loaded: {plugin.name}"
+                        log_sys(f"Loaded container plugin: {plugin.name}"
                         )
                     else:
                         del plugin
@@ -100,8 +161,29 @@ class ContainerPlugins:
             self._tag_to_type_map[entry.tag] = entry
             self._name_to_type_map[entry.name] = entry
 
+    def duplicate(self, container):
+        ''' duplicates a container '''
+        # because containers can be quite complex - we'll just generate the xml and change IDs as needed and reload
+        # into a new container of the same type
+        from gremlin.base_classes import AbstractContainer
+        assert isinstance(container, AbstractContainer),"Invalid container data for duplicate()"
+        container_item = copy.deepcopy(container)
 
-@common.SingletonDecorator
+        for action_set in container_item.get_action_sets():
+            for action in action_set:
+                action.action_id = common.get_guid()
+        
+        return container_item
+
+
+
+
+    
+
+       
+
+
+@SingletonDecorator
 class ActionPlugins:
 
     """Handles discovery and handling of action plugins."""
@@ -185,11 +267,18 @@ class ActionPlugins:
 
     def _discover_plugins(self):
         """Processes known plugin folders for action plugins."""
-        for root, dirs, files in os.walk("action_plugins"):
+        plugin_folder = "action_plugins"
+        root_path = get_root_path()
+        walk_path = os.path.join(root_path, plugin_folder)
+        log_sys(f"Action plugin folder: {walk_path}")
+        if not os.path.isdir(walk_path):
+            raise error(f"Unable to find action_plugins: {walk_path}")
+        
+        for root, dirs, files in os.walk(walk_path):
             for _ in [v for v in files if v == "__init__.py"]:
                 try:
                     folder, module = os.path.split(root)
-                    if folder != "action_plugins":
+                    if not folder.lower().endswith(plugin_folder):
                         continue
 
                     # Attempt to load the file and if it looks like a proper
@@ -199,14 +288,18 @@ class ActionPlugins:
                     )
                     if "version" in plugin.__dict__:
                         self._plugins[plugin.name] = plugin.create
-                        logging.getLogger("system").debug(
-                            f"Loaded: {plugin.name}"
-                        )
+                        log_sys(f"Loaded action plugin: {plugin.name}")
                     else:
                         del plugin
                 except Exception as e:
                     # Log an error and ignore the action_plugins if
                     # anything is wrong with it
-                    logging.getLogger("system").warning(
-                        f"Loading action_plugins '{root.split("\\")[-1]}' failed due to: {e}"
-                    )
+                    log_sys_warn(f"Loading action_plugins '{root.split("\\")[-1]}' failed due to: {e}")
+
+
+    def duplicate(self, action):
+        ''' duplicates an action and gives it a unique ID '''
+        dup = copy.deepcopy(action)
+        dup.action_id = common.get_guid()
+        return dup
+    

@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ from xml.etree import ElementTree
 
 from PySide6 import QtCore
 
-import dill
+import dinput
 
 import action_plugins
 from gremlin.common import DeviceType, InputType, MergeAxisOperation, PluginVariableType
@@ -128,18 +128,18 @@ def parse_guid(value):
     into the underlying raw and exposed objects used within Gremlin.
 
     :param value the string representation of the GUID
-    :param dill.GUID object representing the provided value
+    :param dinput.GUID object representing the provided value
     """
     try:
         tmp = uuid.UUID(value)
-        raw_guid = dill._GUID()
+        raw_guid = dinput._GUID()
         raw_guid.Data1 = int.from_bytes(tmp.bytes[0:4], "big")
         raw_guid.Data2 = int.from_bytes(tmp.bytes[4:6], "big")
         raw_guid.Data3 = int.from_bytes(tmp.bytes[6:8], "big")
         for i in range(8):
             raw_guid.Data4[i] = tmp.bytes[8 + i]
 
-        return dill.GUID(raw_guid)
+        return dinput.GUID(raw_guid)
     except (ValueError, AttributeError) as e:
         raise error.ProfileError(
             f"Failed parsing GUID from value {value}"
@@ -769,7 +769,7 @@ class ProfileConverter:
 
         for entry in root.findall("devices/device"):
             if entry.attrib.get("type", None) == "keyboard":
-                entry.set("device-guid", str(dill.GUID_Keyboard))
+                entry.set("device-guid", str(dinput.GUID_Keyboard))
             else:
                 entry.set(
                     "device-guid",
@@ -1500,6 +1500,7 @@ class Profile():
             if add_device:
                 new_device = Device(self)
                 new_device.name = dev.name
+                new_device.virtual = True
                 if dev.is_virtual:
                     new_device.type = DeviceType.VJoy
                     new_device.device_guid = dev.device_guid
@@ -1697,6 +1698,7 @@ class Device:
         self.device_guid = None
         self.modes = {}
         self.type = None
+        self.virtual = False # true if the device was found in the detected hardware list
 
     def ensure_mode_exists(self, mode_name, device=None):
         """Ensures that a specified mode exists, creating it if needed.
@@ -1794,9 +1796,11 @@ class Mode:
             # which case we'll simply save the action item without
             # verification.
             if item.input_type == InputType.JoystickAxis \
-                    and dill.DILL.device_exists(self.parent.device_guid):
+                    and dinput.DILL.device_exists(self.parent.device_guid):
                 joy = input_devices.JoystickProxy()[self.parent.device_guid]
-                store_item = joy.is_axis_valid(item.input_id)
+                if joy is not None:
+                    store_item = joy.is_axis_valid(item.input_id)
+                    
 
             if store_item:
                 self.config[item.input_type][item.input_id] = item
@@ -1900,13 +1904,15 @@ class InputItem:
 
         :param node XML node to parse
         """
-        container_name_map = plugin_manager.ContainerPlugins().tag_map
+        container_plugins = plugin_manager.ContainerPlugins()
+        container_name_map = container_plugins.tag_map
         self.input_type = InputType.to_enum(node.tag)
         self.input_id = safe_read(node, "id", int)
         self.description = safe_read(node, "description", str)
         self.always_execute = read_bool(node, "always-execute", False)
         if self.input_type == InputType.Keyboard:
             self.input_id = (self.input_id, read_bool(node, "extended"))
+        
         for child in node:
             container_type = child.attrib["type"]
             if container_type not in container_name_map:
@@ -1917,6 +1923,10 @@ class InputItem:
             entry = container_name_map[container_type](self)
             entry.from_xml(child)
             self.containers.append(entry)
+            if hasattr(entry, "action_model"):
+                entry.action_model = self.containers
+            container_plugins.set_container_data(self, entry)
+
 
     def to_xml(self):
         """Generates a XML node representing this object's data.
@@ -2001,6 +2011,16 @@ class ProfileData(metaclass=ABCMeta):
         self.code = None
         self._id = None  # unique ID for this entry
 
+        generic_icon = os.path.join(os.path.dirname(__file__),"generic.png")
+        if os.path.isfile(generic_icon):
+            self._generic_icon = generic_icon
+        else:
+            self._generic_icon = None            
+
+    def icon(self):
+        ''' gets the default icon'''
+        from gremlin.common import get_generic_icon
+        return get_generic_icon()
 
 
     def from_xml(self, node):

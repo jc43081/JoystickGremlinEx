@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -690,10 +690,9 @@ class CurveView(QtWidgets.QGraphicsScene):
         self.model.content_modified.connect(self.redraw_scene)
         self.model.content_added.connect(self._populate_from_model)
         self.point_editor = point_editor
+        from gremlin.common import load_image
 
-        self.background_image = QtGui.QImage(
-            f"{os.path.dirname(os.path.realpath(__file__))}/grid.svg"
-        )
+        self.background_image = load_image("response_curve/grid.svg")
 
         # Connect editor widget signals
         self.point_editor.x_input.valueChanged.connect(self._editor_update)

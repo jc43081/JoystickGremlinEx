@@ -33,7 +33,8 @@ added_files.extend(container_plugins_files)
 added_files.extend(controls_mappings_files)
 added_binaries = [
     ("vjoy/vJoyInterface.dll", "."),
-    ("dill/dill.dll", "."),
+    ("dill.dll", "."),
+	
 ]
 
 a = Analysis(

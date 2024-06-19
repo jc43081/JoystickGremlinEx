@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,10 +24,14 @@ import re
 import sys
 import threading
 import time
+import distutils
+import shutil
 
 from PySide6 import QtCore, QtWidgets
+from win32api import GetFileVersionInfo, LOWORD, HIWORD
 
-from . import common, error, joystick_handling
+
+from . import error 
 
 
 # Table storing which modules have been imported already
@@ -153,10 +157,32 @@ def script_path():
 
 def userprofile_path():
     """Returns the path to the user's profile folder, %userprofile%."""
-    return os.path.normcase(os.path.abspath(os.path.join(
-        os.getenv("userprofile"),
-        "Joystick Gremlin")
-    ))
+    path = os.path.abspath(os.path.join(os.getenv("userprofile"),"Joystick Gremlin Ex"))
+    if not os.path.isdir(path):
+        # profile folder does not exist - see if we can create it from the original profile 
+        source_path = os.path.abspath(os.path.join(os.getenv("userprofile"),"Joystick Gremlin"))
+        if os.path.isdir(source_path):
+            try:
+                # copy from original profile
+                shutil.copytree(source_path, path)
+                logging.getLogger("system").info(f"First run - copied Joystick Gremlin profiles to to Joystick Gremlin Ex")                
+            except Exception as error:
+                logging.getLogger("system").error(f"Unable to copy profile from Joystick Gremlin to Joystick Gremlin Ex:\n{error}")
+        if not os.path.isdir(path):
+            try:
+                # just create it
+                os.mkdir(path)
+            except Exception as error:
+                logging.getLogger("system").error(f"Unable to create profile folder for Joystick Gremlin Ex:\n{error}")
+                
+        if not os.path.isdir(path):                
+                from gremlin.error import GremlinError
+                raise GremlinError(f"Critical error: Unable to create profile folder: {path}")
+            
+
+    return os.path.normcase(path)
+
+    
 
 
 def resource_path(relative_path):
@@ -177,19 +203,42 @@ def resource_path(relative_path):
 
     return os.path.normcase(os.path.join(base_path, relative_path))
 
+def get_root_path():
+    ''' gets the root path of the application '''    
+    from pathlib import Path
+    if getattr(sys, 'frozen', False):
+        # as exe via pyinstallaler
+        application_path = sys._MEIPASS
+    else:
+        # as script (because common is a subfolder, return the parent folder)
+        application_path = Path(os.path.dirname(os.path.abspath(__file__))).parent
+    return application_path
+
+
 
 def display_error(msg):
     """Displays the provided error message to the user.
 
     :param msg the error message to display
     """
+
+    # verify an application exist
+    app = QtWidgets.QApplication.instance()
+    app_created = False
+    if not app:
+        app = QtWidgets.QApplication()
+        app_created = True
+
     box = QtWidgets.QMessageBox(
         QtWidgets.QMessageBox.Critical,
-        "Error",
+        "Joystick Gremlin Ex Error",
         msg,
         QtWidgets.QMessageBox.Ok
     )
     box.exec()
+
+    if app_created:
+        app.quit()
 
 
 def log(msg):
@@ -199,6 +248,17 @@ def log(msg):
     """
     logging.getLogger("user").debug(str(msg))
 
+def log_sys(msg):
+    ''' logs to the system log '''
+    logging.getLogger("system").debug(str(msg))
+
+def log_sys_warn(msg):
+    ''' logs to the system log '''
+    logging.getLogger("system").warning(str(msg))
+
+def log_sys_error(msg):
+    ''' logs to the system error log'''
+    logging.getLogger("system").error(str(msg))
 
 def format_name(name):
     """Returns the name formatted as valid python variable name.
@@ -346,3 +406,79 @@ def rad2deg(angle):
     :return angle in degree
     """
     return angle * (180.0 / math.pi)
+
+
+
+def get_dll_version(path, as_string = True):
+    ''' gets the dll file version number
+    
+    :param path - the full path to the file
+    :returns file major, file minor, product version major, product version minor as integers
+    '''
+    if not os.path.isfile(path):
+        if as_string:
+            return None
+        return (0,0,0,0)
+   
+    info = GetFileVersionInfo (path, "\\")
+    ms = info['FileVersionMS']
+    ls = info['FileVersionLS']
+
+    f_major = HIWORD (ms)
+    f_minor = LOWORD (ms) 
+    p_major = HIWORD (ls)
+    p_minor = LOWORD (ls) 
+    
+    if as_string:
+        return f"{f_major}.{f_minor}.{p_major}.{p_minor}"
+    return (f_major, f_minor, p_major, p_minor)
+
+
+def get_vjoy_driver_version() -> str:
+    ''' gets the vjoy driver version on the current machine '''
+    import subprocess, sys
+    p = subprocess.Popen(["powershell.exe", 
+                "Get-WmiObject Win32_PnPSignedDriver | select devicename, driverversion | ConvertTo-CSV"], 
+                stdout=subprocess.PIPE,
+                startupinfo=subprocess.STARTUPINFO(dwFlags=subprocess.STARTF_USESHOWWINDOW, wShowWindow=subprocess.SW_HIDE,)
+    )
+    p_out, p_err = p.communicate()
+
+    if not p_out:
+        return None
+    p_out = p_out.decode('ascii').lower() # binary string to regular string
+    # convert to dict
+    for line in p_out.split("\n"):
+        if "vjoy" in line:
+            pass
+        if  "vjoy device" in line:
+            _, version = line.split(",")
+            return version.replace("\r","").replace("\"","")
+    return None    
+
+def version_valid(v, v_req):
+    ''' compares two versions 
+    
+    :param v - version as string in x.x.x.x format
+    :param r - version required as string in x.x.x.x format
+    
+    '''
+    def compare_version(version1, version2):
+        def parse_version(version):
+            version_parts = version.split('.')
+            version_ints = [int(part) for part in version_parts]
+            return version_ints
+        v1_parts = parse_version(version1)
+        v2_parts = parse_version(version2)
+        for i in range(max(len(v1_parts), len(v2_parts))):
+            v1_num = v1_parts[i] if i < len(v1_parts) else 0
+            v2_num = v2_parts[i] if i < len(v2_parts) else 0
+
+            if v1_num < v2_num:
+                return -1  # version1 is smaller
+            elif v1_num > v2_num:
+                return 1   # version2 is smaller
+        return 0 # equal
+
+    return compare_version(v, v_req) >= 0
+

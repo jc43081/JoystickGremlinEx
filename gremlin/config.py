@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,11 +22,10 @@ import os
 import re
 
 from PySide6 import QtCore
-
+from gremlin.singleton_decorator import SingletonDecorator
 from . import common, util, event_handler
 
-
-@common.SingletonDecorator
+@SingletonDecorator
 class Configuration:
 
     """Responsible for loading and saving configuration data."""
@@ -645,4 +644,31 @@ class Configuration:
         :param value the position of the main Gremlin window
         """
         self._data["window_location"] = value
+        self.save()
+
+
+    @property
+    def persist_clipboard(self):
+        ''' true if clipboard data is persisted from one session to the next '''
+        return self._data.get("persist_clipboard", False)
+    
+    @persist_clipboard.setter
+    def persist_clipboard(self, value):
+        self._data["persist_clipboard"] = value
+        self.save()
+
+        if not value:
+            # remove from disk any old data
+            from gremlin.clipboard import Clipboard
+            clipboard = Clipboard()
+            clipboard.clear_persisted()
+
+
+    @property
+    def verbose(self):
+        ''' determines loging level '''
+        return self._data.get("verbose", False)
+    @verbose.setter
+    def verbose(self, value):
+        self._data["verbose"] = value
         self.save()

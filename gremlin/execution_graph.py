@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ import copy
 import logging
 import time
 
-from gremlin import actions, base_classes, common, error
+from gremlin import actions, base_classes, common, error, plugin_manager
 
 
 CallbackData = namedtuple("ContainerCallback", ["callback", "event"])
@@ -304,7 +304,11 @@ class ContainerExecutionGraph(AbstractExecutionGraph):
             )
             sequence.append("Condition")
 
-        self.functors.append(container.functor(container))
+        functor = container.functor(container)
+        container_plugins = plugin_manager.ContainerPlugins()
+        container_plugins.register_functor(functor)
+        self.functors.append(functor)
+        
         sequence.append("Action")
 
         self._create_transitions(sequence)

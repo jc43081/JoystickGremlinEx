@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@ import os
 from PySide6 import QtCore, QtGui, QtMultimedia, QtWidgets
 from xml.etree import ElementTree
 
-from gremlin.theme import ThemeQIcon
+
 from gremlin.base_classes import AbstractAction, AbstractFunctor
-from gremlin.common import InputType
+from gremlin.common import InputType, load_icon
 import gremlin.ui.input_item
 
 
@@ -38,7 +38,7 @@ class PlaySoundWidget(gremlin.ui.input_item.AbstractActionWidget):
         self.layout = QtWidgets.QHBoxLayout()
         self.file_path = QtWidgets.QLineEdit()
         self.edit_path = QtWidgets.QPushButton()
-        self.edit_path.setIcon(ThemeQIcon("gfx/button_edit.png"))
+        self.edit_path.setIcon(load_icon("gfx/button_edit.png"))
         self.edit_path.clicked.connect(self._new_executable)
         self.volume = QtWidgets.QSpinBox()
         self.volume.setRange(0, 100)

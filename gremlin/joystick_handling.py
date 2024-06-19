@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,14 +19,18 @@
 import logging
 import threading
 
-import dill
+import dinput
 
 from . import common, error, util
 from vjoy import vjoy
+from dinput import DeviceSummary
 
 
 # List of all joystick devices
 _joystick_devices = []
+
+# map of physical devices by their GUID
+_joystick_device_guid_map = {}
 
 # Joystick initialization lock
 _joystick_init_lock = threading.Lock()
@@ -153,13 +157,25 @@ def vjoy_id_from_guid(guid):
     )
     return 1
 
+def device_name_from_guid(guid) -> str:
+    ''' gets device name from GUID '''
+    if guid in _joystick_device_guid_map.keys():
+        return _joystick_device_guid_map[guid].name
+    return None
+    
+def device_info_from_guid(guid) -> DeviceSummary:
+    ''' gets physical device information '''
+    if guid in _joystick_device_guid_map.keys():
+        return _joystick_device_guid_map[guid]
+    return None
+
 
 def linear_axis_index(axis_map, axis_index):
     """Returns the linear index for an axis based on the axis index.
 
     Parameters
     ==========
-    axis_map : dill.AxisMap
+    axis_map : dinput.AxisMap
         AxisMap instance which contains the mapping between linear and
         axis indices
     axis_index : int
@@ -192,15 +208,15 @@ def joystick_devices_initialization():
     syslog = logging.getLogger("system")
     syslog.info("Initializing joystick devices")
     syslog.debug(
-        f"{dill.DILL.get_device_count():d} joysticks detected"
+        f"{dinput.DILL.get_device_count():d} joysticks detected"
     )
 
     # Process all connected devices in order to properly initialize the
     # device registry
     devices = []
-    device_count = dill.DILL.get_device_count()
+    device_count = dinput.DILL.get_device_count()
     for i in range(device_count):
-        info = dill.DILL.get_device_information_by_index(i)
+        info = dinput.DILL.get_device_information_by_index(i)
         devices.append(info)
 
     # Process all devices again to detect those that have been added and those
@@ -299,5 +315,8 @@ def joystick_devices_initialization():
     # Update device list which will be used when queries for joystick devices
     # are made
     _joystick_devices = devices
+    # device: dinput.DILL.DeviceSummary
+    for device in devices:
+        _joystick_device_guid_map[device.device_guid] = device
 
     _joystick_init_lock.release()

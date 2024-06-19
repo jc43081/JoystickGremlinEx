@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,9 +20,9 @@ from PySide6 import QtCore, QtGui, QtWidgets
 
 import logging
 
-from gremlin.theme import ThemeQIcon
+
 from gremlin import base_classes, hints, input_devices, macro, util
-from gremlin.common import InputType
+from gremlin.common import InputType, load_icon
 from . import common
 
 
@@ -74,7 +74,7 @@ class ActivationConditionWidget(QtWidgets.QWidget):
                 self._granularity_changed_cb
             )
 
-            self.help_button = QtWidgets.QPushButton(ThemeQIcon("gfx/help"), "")
+            self.help_button = QtWidgets.QPushButton(load_icon("gfx/help"), "")
             self.help_button.clicked.connect(self._show_hint)
 
             self.controls_layout = QtWidgets.QHBoxLayout()
@@ -193,11 +193,11 @@ class KeyboardConditionWidget(AbstractConditionWidget):
                     ).name}</b>"
                     )
             self.record_button = common.NoKeyboardPushButton(
-                ThemeQIcon("gfx/button_edit.png"), ""
+                load_icon("gfx/button_edit.png"), ""
             )
             self.record_button.clicked.connect(self._request_user_input)
             self.delete_button = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_delete.png"), ""
+                load_icon("gfx/button_delete.png"), ""
             )
             self.delete_button.clicked.connect(
                 lambda: self.deleted.emit(self.condition_data)
@@ -299,12 +299,12 @@ class JoystickConditionWidget(AbstractConditionWidget):
             common.clear_layout(self.main_layout)
 
             self.record_button = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_edit.png"), ""
+                load_icon("gfx/button_edit.png"), ""
             )
             self.record_button.clicked.connect(self._request_user_input)
             self.delete_button = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_delete.png"), ""
-            )
+                load_icon("gfx/button_delete.png"), "")
+            
             self.delete_button.clicked.connect(
                 lambda: self.deleted.emit(self.condition_data)
             )
@@ -516,6 +516,7 @@ class VJoyConditionWidget(AbstractConditionWidget):
         # Initialize UI fully
         self._modify_vjoy(self.vjoy_selector.get_selection())
 
+
     def _create_ui(self):
         """Creates the configuration UI for this widget."""
         if VJoyConditionWidget.locked:
@@ -541,8 +542,7 @@ class VJoyConditionWidget(AbstractConditionWidget):
                 self.condition_data.input_id
             )
             self.delete_button = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_delete.png"), ""
-            )
+                load_icon("gfx/button_delete.png"), "")
             self.delete_button.clicked.connect(
                 lambda: self.deleted.emit(self.condition_data)
             )
@@ -656,17 +656,21 @@ class VJoyConditionWidget(AbstractConditionWidget):
         )
 
     def _modify_vjoy(self, data):
+        # fix: 5/29/24 EMCS don't override prior value if already a valid value to prevent a condition reset
         self.condition_data.vjoy_id = data["device_id"]
         self.condition_data.input_type = data["input_type"]
         self.condition_data.input_id = data["input_id"]
 
         if data["input_type"] == InputType.JoystickAxis:
-            self.condition_data.comparison = "inside"
+            if not self.condition_data.comparison in ("inside","outside"):
+                self.condition_data.comparison = "inside"
         elif data["input_type"] == InputType.JoystickButton:
-            self.condition_data.comparison = "pressed"
+            if not self.condition_data.comparison in ("pressed","released"):
+                self.condition_data.comparison = "pressed"
         elif data["input_type"] == InputType.JoystickHat:
-            self.condition_data.comparison = \
-                util.hat_tuple_to_direction((0, 0))
+            directions = ("center", "north", "north-east", "east", "south-east","south", "south-west", "west", "north-west")
+            if not self.condition_data.comparison in directions:
+                self.condition_data.comparison = util.hat_tuple_to_direction((0, 0))
         self._create_ui()
 
     def _range_lower_changed_cb(self, value):
@@ -737,8 +741,8 @@ class InputActionConditionWidget(AbstractConditionWidget):
                 self._state_selection_changed
             )
             self.delete_button = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_delete.png"), ""
-            )
+                load_icon("gfx/button_delete.png"), "")
+            
             self.delete_button.clicked.connect(
                 lambda: self.deleted.emit(self.condition_data)
             )
@@ -893,7 +897,7 @@ class ConditionView(common.AbstractView):
         self.controls_layout.addWidget(self.condition_selector)
         self.controls_layout.addWidget(self.condition_add_button)
 
-        self.help_button = QtWidgets.QPushButton(QtGui.QIcon("gfx/help"), "")
+        self.help_button = QtWidgets.QPushButton(load_icon("gfx/help"), "")
         self.help_button.clicked.connect(self._show_hint)
         self.controls_layout.addWidget(self.help_button)
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,12 @@ import logging
 
 from PySide6 import QtCore, QtGui, QtWidgets
 
-from gremlin.theme import ThemeQIcon
-from gremlin.common import PluginVariableType
+
+from gremlin.common import PluginVariableType, load_icon
 import gremlin.profile
 import gremlin.user_plugin
 import gremlin.ui.common
+import os
 
 
 class ModuleManagementController(QtCore.QObject):
@@ -241,6 +242,7 @@ class ModuleManagementView(QtWidgets.QSplitter):
         super().__init__(parent)
 
         self.controller = None
+        from gremlin.common import load_icon
 
         # Create the left panel showing the modules and their instances
         self.left_panel = QtWidgets.QWidget()
@@ -249,10 +251,10 @@ class ModuleManagementView(QtWidgets.QSplitter):
         # Displays the various modules and instances associated with them
         self.module_list = ModuleListWidget()
 
+
         # Button to add a new module
-        self.btn_add_module = QtWidgets.QPushButton(
-            ThemeQIcon("gfx/list_add.svg"), "Add Plugin"
-        )
+        self.btn_add_module = QtWidgets.QPushButton(load_icon("gfx/list_add.svg"), "Add Plugin")
+        
         self.btn_add_module.clicked.connect(self._prompt_user_for_module)
 
         self.left_panel.layout().addWidget(self.module_list)
@@ -342,15 +344,12 @@ class ModuleWidget(QtWidgets.QFrame):
 
         if self.has_variables:
             self.btn_add_instance = QtWidgets.QPushButton(
-                ThemeQIcon("gfx/button_add"),
-                ""
+                load_icon("gfx/button_add"),""
             )
             header_layout.addWidget(self.btn_add_instance)
 
         self.btn_delete = QtWidgets.QPushButton(
-            ThemeQIcon("gfx/button_delete"),
-            ""
-        )
+            load_icon("gfx/button_delete"),"")
         header_layout.addWidget(self.btn_delete)
 
         self.instance_layout = QtWidgets.QVBoxLayout()
@@ -389,14 +388,14 @@ class InstanceWidget(QtWidgets.QWidget):
         self.label_name = QtWidgets.QLabel(self.name)
 
         self.btn_rename = QtWidgets.QPushButton(
-            ThemeQIcon("gfx/button_edit"), ""
+            load_icon("gfx/button_edit"), ""
         )
         self.btn_rename.clicked.connect(self.rename_instance)
         self.btn_configure = QtWidgets.QPushButton(
-            ThemeQIcon("gfx/options"), ""
+            load_icon("gfx/options"), ""
         )
         self.btn_delete = QtWidgets.QPushButton(
-            ThemeQIcon("gfx/button_delete"), ""
+             load_icon("gfx/button_delete"), ""
         )
 
         self.main_layout.addWidget(self.label_name)

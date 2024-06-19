@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ from abc import abstractmethod, ABCMeta
 from functools import partial
 import logging
 
-import dill
+import dinput
 
 from . import base_classes, common, event_handler, fsm, input_devices, \
     joystick_handling, macro, util
@@ -207,6 +207,9 @@ class JoystickCondition(AbstractCondition):
         :return True if the condition is satisfied, False otherwise
         """
         joy = input_devices.JoystickProxy()[self.device_guid]
+        if joy is None:
+            # device not found - ignore
+            return False
 
         if self.input_type == common.InputType.JoystickAxis:
             in_range = self.condition.range[0] <= \
@@ -271,6 +274,9 @@ class VJoyCondition(AbstractCondition):
             )
             return False
         joy = input_devices.JoystickProxy()[self.device_guid]
+        if joy is None:
+            # device not found - ignore
+            return False
 
         if self.input_type == common.InputType.JoystickAxis:
             in_range = self.condition.range[0] <= \
@@ -389,7 +395,7 @@ class VirtualButton(metaclass=ABCMeta):
         event = event_handler.Event(
             common.InputType.VirtualButton,
             self._identifier,
-            device_guid=dill.GUID_Virtual,
+            device_guid=dinput.GUID_Virtual,
             is_pressed=self._is_pressed,
             raw_value=self._is_pressed
         )
@@ -402,7 +408,7 @@ class VirtualButton(metaclass=ABCMeta):
         event = event_handler.Event(
             common.InputType.VirtualButton,
             self._identifier,
-            device_guid=dill.GUID_Virtual,
+            device_guid=dinput.GUID_Virtual,
             is_pressed=self._is_pressed,
             raw_value=self._is_pressed
         )

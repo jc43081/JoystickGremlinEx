@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 from PySide6 import QtWidgets, QtCore, QtGui
 
 import gremlin
-from gremlin.theme import ThemeQIcon
+from gremlin.common import load_icon
 
 class AbstractVirtualButtonWidget(QtWidgets.QGroupBox):
 
@@ -108,7 +108,7 @@ class VirtualAxisButtonWidget(AbstractVirtualButtonWidget):
 
             self.range_layout.addStretch(1)
 
-            self.help_button = QtWidgets.QPushButton(ThemeQIcon("gfx/help"), "")
+            self.help_button = QtWidgets.QPushButton(load_icon("gfx/help"), "")
             self.help_button.clicked.connect(self._show_hint)
             self.range_layout.addWidget(self.help_button)
 
@@ -191,7 +191,7 @@ class VirtualHatButtonWidget(AbstractVirtualButtonWidget):
             for direction in directions:
                 self._widgets[direction] = QtWidgets.QCheckBox()
                 self._widgets[direction].setIcon(
-                    ThemeQIcon(f"gfx/hat_{direction}.png")
+                    load_icon(f"gfx/hat_{direction}.png")
                 )
                 self._widgets[direction].toggled.connect(
                     self._create_state_changed_cb(direction)
@@ -200,7 +200,7 @@ class VirtualHatButtonWidget(AbstractVirtualButtonWidget):
 
             self.main_layout.addStretch(1)
 
-            self.help_button = QtWidgets.QPushButton(ThemeQIcon("gfx/help"), "")
+            self.help_button = QtWidgets.QPushButton(load_icon("gfx/help"), "")
             self.help_button.clicked.connect(self._show_hint)
             self.main_layout.addWidget(self.help_button)
         finally:

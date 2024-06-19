@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -82,7 +82,7 @@ def _read_value(handle, value_name, value_type):
         return [None, value_type]
     except PermissionError:
         raise HidGuardianError(
-            f"Unable to read value \"{value_name}\", insufficient permissions"
+            f"Unable to read value '{value_name}', insufficient permissions"
         )
 
 
@@ -96,8 +96,7 @@ def _write_value(handle, value_name, data):
     try:
         winreg.SetValueEx(handle, value_name, 0, data[1], data[0])
     except PermissionError:
-        raise HidGuardianError(
-            f"Unable to write value \"{value_name}\", insufficient permissions"
+        raise HidGuardianError(f"Unable to write value '{value_name}', insufficient permissions"
         )
 
 

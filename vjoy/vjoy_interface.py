@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,9 +19,8 @@
 import ctypes
 import enum
 import os
-
 from gremlin.error import GremlinError
-
+import logging
 
 class VJoyState(enum.Enum):
 
@@ -38,17 +37,8 @@ class VJoyInterface:
 
     """Allows low level interaction with VJoy devices via ctypes."""
 
-    # Attempt to find the correct location of the dll for development
-    # and installed use cases.
-    dev_path = os.path.join(os.path.dirname(__file__), "vJoyInterface.dll")
-    if os.path.isfile("vJoyInterface.dll"):
-        dll_path = "vJoyInterface.dll"
-    elif os.path.isfile(dev_path):
-        dll_path = dev_path
-    else:
-        raise GremlinError("Unable to locate vjoy dll")
+    vjoy_dll = None
 
-    vjoy_dll = ctypes.cdll.LoadLibrary(dll_path)
 
     # Declare argument and return types for all the functions
     # exposed by the dll
@@ -164,16 +154,72 @@ class VJoyInterface:
     }
 
     @classmethod
-    def initialize(cls):
+    def initialize(self):
         """Initializes the functions as class methods."""
-        for fn_name, params in cls.api_functions.items():
-            dll_fn = getattr(cls.vjoy_dll, fn_name)
+        from pathlib import Path
+        from gremlin.util import display_error, get_dll_version, version_valid, get_vjoy_driver_version
+
+        if VJoyInterface.vjoy_dll is None:
+
+            dll_folder = os.path.dirname(__file__)
+            dll_file = "vJoyInterface.dll"
+            _dll_path = os.path.join(dll_folder, dll_file )
+            if not os.path.isfile(_dll_path):
+
+                # look one level up for packaging in 3.12
+                parent = Path(dll_folder).parent
+                _dll_path = os.path.join(parent, dll_file)
+                if not os.path.isfile(_dll_path):
+                    msg = f"Unable to continue - missing dll: {_dll_path}"
+                    display_error(msg)
+                    logging.getLogger("system").critical(msg)
+                    os._exit(1) 
+
+            # check vjoy driver version and that it's installed
+            driver_version = get_vjoy_driver_version()
+            if driver_version:
+                min_version = "12.53.21.621"
+                if not version_valid(driver_version, min_version):
+                    msg = f"Invalid VJOY driver: {min_version} required, found {driver_version}"
+                    display_error(msg)
+                    logging.getLogger("system").critical(msg)
+                    os._exit(1) 
+
+                logging.getLogger("system").info(f"Found VJOY driver {driver_version}")
+            else:
+                # no driver
+                msg = f"VJOY driver not detected - unable to continue - expecting version {min_version}"
+                display_error(msg)
+                logging.getLogger("system").critical(msg)
+                os._exit(1)             
+
+
+            # check DLL version                
+            min_version = "2.1.9.1"
+            dll_version = get_dll_version(_dll_path)
+            if not version_valid(dll_version, min_version):
+                msg = f"Invalid version dll: {_dll_path}\nVersion {min_version} required, found {dll_version}"
+                display_error(msg)
+                logging.getLogger("system").critical(msg)
+                os._exit(1)
+
+            logging.getLogger("system").info(f"Found VJOY DLL version {dll_version}")
+
+            try:
+                VJoyInterface.vjoy_dll = ctypes.cdll.LoadLibrary(_dll_path)
+            except Exception as error:
+                msg = f"vjoy_interface.dll load error, unable to continue:\n{error}"
+                display_error(msg)
+                logging.getLogger("system").critical(msg)
+                os._exit(1)
+
+
+        for fn_name, params in self.api_functions.items():
+            dll_fn = getattr(self.vjoy_dll, fn_name)
             if "arguments" in params:
                 dll_fn.argtypes = params["arguments"]
             if "returns" in params:
                 dll_fn.restype = params["returns"]
-            setattr(cls, fn_name, dll_fn)
+            setattr(self, fn_name, dll_fn)
 
 
-# Initialize the class
-VJoyInterface.initialize()
