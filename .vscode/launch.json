@@ -10,8 +10,18 @@
             "request": "launch",
             "program": "${workspaceFolder}/joystick_gremlin.py",
             "console": "integratedTerminal",
-            "env": {"PYTHONPATH": "${workspaceFolder};${env:PYTHONPATH}"},
-            "restart": true
+            "env": {"PYTHONPATH": "${workspaceFolder};${env:PYTHONPATH}"}
+        },
+        {
+            "name": "Python: Generate WIX",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/generate_wix.py",
+            "args": [ "--folder", "joystick_gremlin", "--version", "13.40.13-sc.1"],
+            "cwd": "${workspaceFolder}/dist",
+            "console": "integratedTerminal",
+            "env": {"PYTHONPATH": "${workspaceFolder};${env:PYTHONPATH}"}
         }
+
     ]
 }
