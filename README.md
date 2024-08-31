@@ -15,6 +15,7 @@ SC Added Features
 
 Current Support:
 - 3.23.1
+- 3.24.0
 
 <hr style="border:3px solid gray">
 
