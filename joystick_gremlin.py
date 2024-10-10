@@ -31,8 +31,7 @@ import threading
 
 
 # Import QtMultimedia so pyinstaller doesn't miss it
-import PySide6
-from PySide6 import QtCore, QtGui, QtMultimedia, QtWidgets
+from PySide6 import QtCore, QtGui, QtMultimedia, QtWidgets, __file__
 
 
 import gremlin.base_classes
@@ -68,7 +67,7 @@ from gremlin.ui.ui_gremlin import Ui_Gremlin
 from gremlin.input_devices import remote_state
 
 APPLICATION_NAME = "Joystick Gremlin SC"
-APPLICATION_VERSION = "13.40.13-sc.1"
+APPLICATION_VERSION = "13.40.13-sc.2"
 
 
 from gremlin.singleton_decorator import SingletonDecorator
@@ -1614,7 +1613,7 @@ if __name__ == "__main__":
 
     # Fix some dumb Qt bugs
     QtWidgets.QApplication.addLibraryPath(os.path.join(
-        os.path.dirname(PySide6.__file__),
+        os.path.dirname(__file__),
         "plugins"
     ))
 

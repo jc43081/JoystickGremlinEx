@@ -1,6 +1,6 @@
 PySide6
 reportlab
-PyInstaller
+PyInstaller<6.6
 pywin32
 pytest
 msgpack
