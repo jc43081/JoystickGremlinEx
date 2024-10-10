@@ -241,6 +241,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             el = gremlin.event_handler.EventListener()
             el.action_description_changed.emit()
 
+
 class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
     """Executes a Map to Star Citizen action when called."""
@@ -260,6 +261,34 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         self.thread = None
         self.axis_delta_value = 0.0
         self.axis_value = 0.0
+
+        if self.input_type == InputType.JoystickAxis:
+            self.device_guid = action.hardware_device.device_guid
+            self.joy = input_devices.JoystickProxy()[self.device_guid]
+            self.hardware_input_id = action.hardware_input_id
+            if self.joy is not None:
+                current_joy_value = self.joy.axis(self.hardware_input_id).value
+                el = gremlin.event_handler.EventListener()                
+                el.joystick_event.emit(gremlin.event_handler.Event(
+                        event_type=InputType.JoystickAxis,
+                        device_guid=self.device_guid,
+                        identifier=self.hardware_input_id,
+                        value=current_joy_value
+                    ))   
+                
+            eh = gremlin.event_handler.EventHandler()
+            eh.mode_changed.connect(self._mode_changed_cb)                
+
+    def _mode_changed_cb(self):
+            current_joy_value = self.joy.axis(self.hardware_input_id).value
+            el = gremlin.event_handler.EventListener()            
+            el.joystick_event.emit(gremlin.event_handler.Event(
+                    event_type=InputType.JoystickAxis,
+                    device_guid=self.device_guid,
+                    identifier=self.hardware_input_id,
+                    value=current_joy_value
+                ))            
+
 
     def process_event(self, event, value):
         if self.input_type == InputType.JoystickAxis:
