@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,10 +19,11 @@
 from PySide6 import QtCore, QtWidgets
 
 import gremlin.joystick_handling
-import gremlin.ui.common
+import gremlin.shared_state
+import gremlin.ui.ui_common
 
-
-class ProfileSettingsWidget(QtWidgets.QWidget):
+from gremlin.ui.qdatawidget import QDataWidget
+class ProfileSettingsWidget(QDataWidget):
 
     """Widget allowing changing profile specific settings."""
 
@@ -66,7 +67,7 @@ class ProfileSettingsWidget(QtWidgets.QWidget):
 
     def refresh_ui(self, emit_change=False):
         """Refreshes the entire UI."""
-        gremlin.ui.common.clear_layout(self.scroll_layout)
+        gremlin.ui.ui_common.clear_layout(self.scroll_layout)
         self._create_ui()
         if emit_change:
             self.changed.emit()
@@ -145,7 +146,7 @@ class DefaultDelay(QtWidgets.QGroupBox):
         """Creates the UI of this widget."""
         self.setTitle("Default Macro Action Delay")
 
-        self.delay_value = gremlin.ui.common.DynamicDoubleSpinBox()
+        self.delay_value = gremlin.ui.ui_common.DynamicDoubleSpinBox()
         self.delay_value.setRange(0.0, 10.0)
         self.delay_value.setSingleStep(0.05)
         self.delay_value.setValue(self.profile_data.default_delay)
@@ -187,11 +188,12 @@ class DefaultModeSelector(QtWidgets.QGroupBox):
         self.setTitle("Startup Mode")
 
         self.dropdown = QtWidgets.QComboBox()
-        self.dropdown.addItem("Use Heuristic")
+        # self.dropdown.addItem("Use Heuristic")
         for mode in gremlin.profile.mode_list(self.profile_data):
             self.dropdown.addItem(mode)
-        if self.profile_data.startup_mode:
-            self.dropdown.setCurrentText(self.profile_data.startup_mode)
+        start_mode = gremlin.shared_state.current_profile.get_start_mode()
+        if start_mode:
+            self.dropdown.setCurrentText(start_mode)
         self.dropdown.currentIndexChanged.connect(self._update_cb)
 
         self.main_layout.addWidget(self.dropdown)
@@ -207,6 +209,52 @@ class DefaultModeSelector(QtWidgets.QGroupBox):
         else:
             self.profile_data.startup_mode = self.dropdown.currentText()
 
+
+class ControlsMapping(QtWidgets.QGroupBox):
+
+    """Allows selecting the mode in which Gremlin starts."""
+
+    def __init__(self, profile_data, parent=None):
+        """Creates a new instance.
+
+        :param profile_data profile settings managed by the widget
+        :param parent the parent of this widget
+        """
+        super().__init__(parent)
+
+        self.profile_data = profile_data
+        self.current_text = profile_data.sc_controls_mapping
+
+        self.main_layout = QtWidgets.QHBoxLayout(self)
+        self._create_ui()
+
+    def _create_ui(self):
+        """Creates the UI used to configure the Control Mapping."""
+        self.setTitle("Controls Mappings")
+
+        self.main_layout.addWidget(QtWidgets.QLabel("Star Citizen:"))
+        line_edit = QtWidgets.QLineEdit()
+        line_edit.setText(self.profile_data.sc_controls_mapping)
+        line_edit.textChanged.connect(self._update_cb)
+        line_button = QtWidgets.QPushButton("Update Profile")
+        line_button.clicked.connect(self._update_profile)
+        self.main_layout.addWidget(line_edit)
+        self.main_layout.addWidget(line_button)
+        self.main_layout.addStretch()
+
+    def _update_cb(self, text):
+        """Handles changes in the mode selection drop down.
+
+        :param index the index of the entry selected
+        """
+        self.current_text = text
+
+    def _update_profile(self):
+        self.profile_data.sc_controls_mapping = self.current_text
+        el = gremlin.event_handler.EventListener()
+        el.controls_mapping_changed.emit(self.profile_data.sc_controls_mapping)
+        config = gremlin.config.Configuration()
+        el.reload_profile.emit(config.last_profile)
 
 class ControlsMapping(QtWidgets.QGroupBox):
 
@@ -295,7 +343,7 @@ class VJoyAxisDefaultsWidget(QtWidgets.QWidget):
                 0
             )
 
-            box = gremlin.ui.common.DynamicDoubleSpinBox()
+            box = gremlin.ui.ui_common.DynamicDoubleSpinBox()
             box.setRange(-1, 1)
             box.setSingleStep(0.05)
             box.setValue(self.profile_data.get_initial_vjoy_axis_value(
