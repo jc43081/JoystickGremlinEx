@@ -40,7 +40,7 @@ import logging
 syslog = logging.getLogger("system")
 import qtawesome as qta
 import gremlin.ui.input_item
-import gremlin.base_profile
+import gremlin.profile
 
 
 
@@ -455,7 +455,7 @@ class InputItemListView(ui_common.AbstractView):
                 else:
                     widget = InputItemWidget(identifier)
                     if data.input_type == InputType.JoystickAxis:
-                        widget.setIcon("joystick_no_frame.png",use_qta=False)
+                        widget.setIcon("gfx/joystick_no_frame.png",use_qta=False)
                     elif data.input_type == InputType.JoystickButton:
                         widget.setIcon("mdi.gesture-tap-button")
                     elif data.input_type == InputType.JoystickHat:
@@ -591,7 +591,7 @@ class InputItemListView(ui_common.AbstractView):
             message_box = QtWidgets.QMessageBox()
             message_box.setText("Delete confirmation")
             message_box.setInformativeText("This will delete associated actions for this entry.\nAre you sure?")
-            pixmap = load_pixmap("warning.svg")
+            pixmap = load_pixmap("gfx/warning.svg")
             pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
             message_box.setIconPixmap(pixmap)
             message_box.setStandardButtons(
@@ -1301,7 +1301,7 @@ class ContainerSelector(QtWidgets.QWidget):
 
         # clipboard
         self.paste_button = QtWidgets.QPushButton()
-        icon = gremlin.util.load_icon("button_paste.svg")
+        icon = gremlin.util.load_icon("gfx/button_paste.svg")
         self.paste_button.setIcon(icon)
         self.paste_button.clicked.connect(self._paste_container)
         self.paste_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Minimum)

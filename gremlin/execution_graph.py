@@ -23,7 +23,7 @@ import time
 
 import gremlin.base_buttons
 import gremlin.base_classes
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 from gremlin.input_types import InputType
 import gremlin.actions

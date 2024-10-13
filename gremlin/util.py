@@ -208,9 +208,16 @@ def resource_path(relative_path):
     return os.path.normcase(os.path.join(base_path, relative_path))
 
 
-
-
-
+def get_root_path():
+    ''' gets the root path of the application '''    
+    from pathlib import Path
+    if getattr(sys, 'frozen', False):
+        # as exe via pyinstallaler
+        application_path = sys._MEIPASS
+    else:
+        # as script (because common is a subfolder, return the parent folder)
+        application_path = Path(os.path.dirname(os.path.abspath(__file__))).parent
+    return application_path
 
 
 
@@ -366,7 +373,6 @@ def clear_layout(layout):
 
     :param layout the layout from which to remove all items
     """
-
     while layout.count() > 0:
         child = layout.takeAt(0)
         if child.layout():
@@ -414,7 +420,6 @@ dill_hat_lookup = {
     31500: (-1, 1)
 }
 
-
 def load_module(name):
     """Imports  the given module.
 
@@ -445,7 +450,6 @@ def rad2deg(angle):
     :return angle in degree
     """
     return angle * (180.0 / math.pi)
-
 
 
 def get_dll_version(path, as_string = True):
@@ -1216,5 +1220,3 @@ def debug_pickle(instance, exception=None, string='', first_only=True):
         )
 
     return problems
-
-

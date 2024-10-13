@@ -23,7 +23,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from gremlin.common import PluginVariableType
 import gremlin.config
 from gremlin.util import load_icon, userprofile_path
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 import gremlin.user_plugin
 import gremlin.ui.ui_common
@@ -58,7 +58,7 @@ class ModuleManagementController(QtCore.QObject):
             # Only add a new entry if the module doesn't exist yet
             if fname not in [v.file_name for v in self.profile_data.plugins]:
                 # Update the model
-                module = gremlin.base_profile.Plugin(self.profile_data)
+                module = gremlin.profile.Plugin(self.profile_data)
                 module.file_name = fname
 
                 # Create new data instance
@@ -115,7 +115,7 @@ class ModuleManagementController(QtCore.QObject):
         import re
         gremlin.util.pushCursor()
         module_data = instance.parent
-        new_instance =  gremlin.base_profile.PluginInstance(module_data)
+        new_instance =  gremlin.profile.PluginInstance(module_data)
         
         not_unique = True
 
@@ -201,7 +201,7 @@ class ModuleManagementController(QtCore.QObject):
             if var.variable_type is not None:
                 # Create basic profile variable instance if it does not exist
                 if not instance.has_variable(var.label):
-                    profile_var = gremlin.base_profile.PluginVariable(instance)
+                    profile_var = gremlin.profile.PluginVariable(instance)
                     profile_var.name = var.label
                     profile_var.type = var.variable_type
                     profile_var.value = var.value
@@ -309,7 +309,7 @@ class ModuleManagementController(QtCore.QObject):
 
     def _create_module_instance(self, name, module_data):
         # Create the model data side of things
-        instance = gremlin.base_profile.PluginInstance(module_data)
+        instance = gremlin.profile.PluginInstance(module_data)
         instance.name = name
 
         # Properly populate the new instance with default values for all

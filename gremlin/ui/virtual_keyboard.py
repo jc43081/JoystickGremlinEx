@@ -3,7 +3,7 @@ from lxml import etree as ElementTree
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 from gremlin.input_devices import ButtonReleaseActions
 import gremlin.keyboard

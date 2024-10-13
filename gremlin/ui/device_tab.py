@@ -22,7 +22,7 @@ from PySide6 import QtWidgets, QtCore
 
 
 import gremlin
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 import gremlin.profile
 import gremlin.shared_state
@@ -55,7 +55,7 @@ class InputItemConfiguration(QtWidgets.QFrame):
         """
         super().__init__(parent)
 
-        self.item_data : gremlin.base_profile.InputItem = item_data
+        self.item_data : gremlin.profile.InputItem = item_data
 
 
         self.main_layout = QtWidgets.QVBoxLayout(self)
@@ -564,7 +564,7 @@ class JoystickDeviceTabWidget(QDataWidget):
         if data.input_type == InputType.JoystickAxis:
             #widget = input_item.InputItemWidget(identifier = identifier, parent=parent,  populate_ui_callback=self._populate_axis_input_widget_ui, data = data)
             widget = input_item.InputItemWidget(identifier = identifier, parent=parent, data = data)
-            widget.setIcon("joystick_no_frame.png",use_qta=False)
+            widget.setIcon("gfx/joystick_no_frame.png",use_qta=False)
         elif data.input_type == InputType.JoystickButton:
             #widget = input_item.InputItemWidget(identifier = identifier, parent=parent, populate_ui_callback=self._populate_button_input_widget_ui, data = data)
             widget = input_item.InputItemWidget(identifier = identifier, parent=parent, data = data)

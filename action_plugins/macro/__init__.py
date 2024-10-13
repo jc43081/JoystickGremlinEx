@@ -26,7 +26,7 @@ from lxml import etree as ElementTree
 
 from PySide6.QtGui import QIcon
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 import gremlin.keyboard
 import gremlin.macro
@@ -40,7 +40,7 @@ from gremlin.macro_handler import *
 
 syslog = logging.getLogger("system")
 
-class MacroFunctor(gremlin.base_profile.AbstractFunctor):
+class MacroFunctor(gremlin.base_conditions.AbstractFunctor):
 
     manager = gremlin.macro.MacroManager()
 

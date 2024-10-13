@@ -24,7 +24,7 @@ from PySide6 import QtCore, QtGui, QtWidgets
 from lxml import etree as ElementTree
 
 import gremlin
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 import gremlin.event_handler
 from gremlin.input_types import InputType
@@ -748,7 +748,7 @@ class CurveView(QtWidgets.QGraphicsScene):
         self.point_editor = point_editor
         from gremlin.util import load_image
 
-        self.background_image = load_image("response_curve/grid.svg")
+        self.background_image = load_image("action_plugins/response_curve/grid.svg")
 
         # Connect editor widget signals
         self.point_editor.x_input.valueChanged.connect(self._editor_update)
@@ -1398,7 +1398,7 @@ class ResponseCurveWidget(gremlin.ui.input_item.AbstractActionWidget):
         self.curve_model.invert()
 
 
-class ResponseCurveFunctor(gremlin.base_profile.AbstractFunctor):
+class ResponseCurveFunctor(gremlin.base_conditions.AbstractFunctor):
 
     def __init__(self, action):
         super().__init__(action)

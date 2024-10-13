@@ -22,7 +22,7 @@ import os
 from lxml import etree as ElementTree
 from PySide6 import QtWidgets, QtCore, QtGui
 
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 import gremlin.event_handler
 import gremlin.execution_graph
@@ -1822,12 +1822,12 @@ class GateData():
 
         
     def _find_input_item(self):
-        return gremlin.base_profile._get_input_item(self._action_data)
+        return gremlin.profile._get_input_item(self._action_data)
 
     def _new_item_data(self, is_action = True):
         ''' creates a new item data from the existing one '''
         current_item_data = self._find_input_item()
-        item_data = gremlin.base_profile.InputItem()
+        item_data = gremlin.profile.InputItem()
         item_data._input_type = current_item_data._input_type
         item_data._device_guid = current_item_data._device_guid
         item_data._input_id = current_item_data._input_id
@@ -2673,7 +2673,7 @@ class GatedAxisWidget(QtWidgets.QWidget):
         message_box = QtWidgets.QMessageBox()
         message_box.setText("Delete confirmation")
         message_box.setInformativeText("This will delete this gate.\nAre you sure?")
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         message_box.setIconPixmap(pixmap)
         message_box.setStandardButtons(
@@ -2884,7 +2884,7 @@ class GatedAxisWidget(QtWidgets.QWidget):
             # display a warning a gate is already there
             message_box = QtWidgets.QMessageBox()
             message_box.setText("A gate already exists at this location")
-            pixmap = load_pixmap("warning.svg")
+            pixmap = load_pixmap("gfx/warning.svg")
             pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
             message_box.setIconPixmap(pixmap)
             message_box.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
@@ -2909,7 +2909,7 @@ class GatedAxisWidget(QtWidgets.QWidget):
             message_box = QtWidgets.QMessageBox()
             message_box.setText("Reduce gate confirmation")
             message_box.setInformativeText("This will reduce gates, delete gate configurations and normalize gates.\nAre you sure?")
-            pixmap = load_pixmap("warning.svg")
+            pixmap = load_pixmap("gfx/warning.svg")
             pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
             message_box.setIconPixmap(pixmap)
             message_box.setStandardButtons(
@@ -3239,7 +3239,7 @@ class ActionContainerUi(QtWidgets.QDialog):
         message_box = QtWidgets.QMessageBox()
         message_box.setText("Delete confirmation")
         message_box.setInformativeText("This will delete this entry.\nAre you sure?")
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         message_box.setIconPixmap(pixmap)
         message_box.setStandardButtons(

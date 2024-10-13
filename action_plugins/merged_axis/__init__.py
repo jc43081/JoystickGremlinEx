@@ -20,7 +20,7 @@ import os
 from PySide6 import QtWidgets, QtGui, QtCore
 from lxml import etree as ElementTree
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 import gremlin.input_types
 import gremlin.ui.input_item
@@ -377,7 +377,7 @@ class MergedAxisWidget(gremlin.ui.input_item.AbstractActionWidget):
 
 
  
-class MergedAxisFunctor(gremlin.base_profile.AbstractContainerActionFunctor):
+class MergedAxisFunctor(gremlin.base_conditions.AbstractContainerActionFunctor):
 
     def __init__(self, action):
         super().__init__(action)
@@ -434,7 +434,7 @@ class MergedAxisFunctor(gremlin.base_profile.AbstractContainerActionFunctor):
             shared_value = gremlin.actions.Value(value)
 
             containers = self.action_data.item_data.containers
-            container: gremlin.base_profile.AbstractContainer
+            container: gremlin.profile.AbstractContainer
             for container in containers:
                 if container in self._callbacks.keys():
                     callbacks = self._callbacks[container]
@@ -518,15 +518,15 @@ class MergedAxis(gremlin.base_profile.AbstractAction):
 
 
         # container holder for this action
-        current_item_data = gremlin.base_profile._get_input_item(self)
-        item_data = gremlin.base_profile.InputItem()
+        current_item_data = gremlin.profile._get_input_item(self)
+        item_data = gremlin.profile.InputItem()
         item_data._input_type = current_item_data._input_type
         item_data._device_guid = current_item_data._device_guid
         item_data._input_id = current_item_data._input_id
         item_data._is_action = True
         item_data._profile_mode = current_item_data._profile_mode
         item_data._device_name = current_item_data._device_name
-        self.item_data : gremlin.base_profile.InputItem = item_data
+        self.item_data : gremlin.profile.InputItem = item_data
 
 
 

@@ -20,7 +20,7 @@ import os
 
 from PySide6 import QtWidgets, QtCore, QtGui
 
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 import gremlin.event_handler
 from gremlin.input_types import InputType
@@ -119,7 +119,7 @@ class SimconnectOptions(QtCore.QObject):
     ''' holds simconnect mapper options for all actions '''
     def __init__(self):
         super().__init__()
-        self._profile : gremlin.base_profile.Profile = gremlin.shared_state.current_profile
+        self._profile : gremlin.profile.Profile = gremlin.shared_state.current_profile
         self._mode_list = self._profile.get_modes()
         self._xml_source = os.path.join(gremlin.util.userprofile_path(),"simconnect_config.xml")
         self._auto_mode_select = True # if set, autoloads the mode associated with the aircraft if such a mode exists
@@ -507,7 +507,7 @@ class SimconnectOptionsUi(QtWidgets.QDialog):
 
 
         self.mode_list = []
-        self.profile : gremlin.base_profile.Profile = gremlin.shared_state.current_profile
+        self.profile : gremlin.profile.Profile = gremlin.shared_state.current_profile
         self.mode_list = self.profile.get_modes()
         self.default_mode = self.profile.get_default_mode()
 
@@ -539,7 +539,7 @@ class SimconnectOptionsUi(QtWidgets.QDialog):
 
 
         self.edit_mode_widget = QtWidgets.QPushButton()
-        self.edit_mode_widget.setIcon(gremlin.util.load_icon("manage_modes.svg"))
+        self.edit_mode_widget.setIcon(gremlin.util.load_icon("gfx/manage_modes.svg"))
         self.edit_mode_widget.clicked.connect(self._manage_modes_cb)
         self.edit_mode_widget.setToolTip("Manage Modes")
 
@@ -1567,7 +1567,7 @@ class MapToSimConnectWidget(gremlin.ui.input_item.AbstractActionWidget):
             self._output_data_type_label_widget.setText(block.display_data_type)
             self.output_readonly_status_widget.setText("(command is Read/Only)" if block.is_readonly else '')
 
-                # update the output data type
+            # update the output data type
             if block.output_data_type == OutputType.FloatNumber:
                 self._output_data_type_label_widget.setText("Number (float)")
             elif block.output_data_type == OutputType.IntNumber:
@@ -1695,7 +1695,7 @@ class MapToSimConnectWidget(gremlin.ui.input_item.AbstractActionWidget):
 
 
 
-class MapToSimConnectFunctor(gremlin.base_profile.AbstractContainerActionFunctor):
+class MapToSimConnectFunctor(gremlin.base_conditions.AbstractContainerActionFunctor):
 
     manager = gremlin.macro.MacroManager()
 

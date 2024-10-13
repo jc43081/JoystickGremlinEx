@@ -13,7 +13,7 @@ import importlib
 import msgpack
 
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.singleton_decorator import SingletonDecorator
 
 class ObjectEncoder():
@@ -206,7 +206,7 @@ class Clipboard(QtCore.QObject):
     @property
     def is_action(self):
         ''' true if the data item is an action '''
-        from gremlin.base_profile import AbstractAction
+        from gremlin.profile import AbstractAction
         return self.data is not None and isinstance(self.data, AbstractAction)
     
     @property

@@ -28,6 +28,7 @@ import dinput
 import gremlin
 from PySide6.QtGui import QIcon as load_icon
 from PySide6.QtWidgets import QMessageBox
+import gremlin.base_profile
 from gremlin.clipboard import Clipboard
 import gremlin.config
 import gremlin.event_handler
@@ -42,7 +43,7 @@ import gremlin.ui.ui_common as ui_common
 from gremlin.util import load_icon, userprofile_path, load_pixmap, pushCursor, popCursor
 import logging
 from gremlin.input_types import InputType
-import gremlin.base_profile
+import gremlin.profile
 import uuid
 from lxml import etree
 import dinput
@@ -83,7 +84,7 @@ class ProfileOptionsUi(QtWidgets.QDialog):
         self.numlock_widget.setChecked(self.profile.get_force_numlock())
         self.numlock_widget.clicked.connect(self._numlock_force_cb)
 
-        self.profile : gremlin.base_profile.Profile = gremlin.shared_state.current_profile
+        self.profile : gremlin.profile.Profile = gremlin.shared_state.current_profile
         self.start_label = QtWidgets.QLabel("Start Mode")
         self.start_label.setSizePolicy(min_min_sp)
         self.start_mode_selector = QtWidgets.QComboBox()
@@ -328,14 +329,14 @@ class OptionsUi(ui_common.BaseDialogUi):
 
         # Start minimized option
         self.start_minimized = QtWidgets.QCheckBox(
-            "Start Joystick Gremlin Ex minimized"
+            "Start Joystick Gremlin SC minimized"
         )
         self.start_minimized.clicked.connect(self._start_minimized)
         self.start_minimized.setChecked(self.config.start_minimized)
 
         # Start on user login
         self.start_with_windows = QtWidgets.QCheckBox(
-            "Start Joystick Gremlin Ex with Windows"
+            "Start Joystick Gremlin SC with Windows"
         )
         self.start_with_windows.clicked.connect(self._start_windows)
         self.start_with_windows.setChecked(self._start_windows_enabled())
@@ -349,7 +350,7 @@ class OptionsUi(ui_common.BaseDialogUi):
 
         # verbose output
         self.verbose = QtWidgets.QCheckBox("Verbose log")
-        self.verbose.clicked.connect(self._verbose)
+        self.verbose.clicked.connect(self._verbose_cb)
         self.verbose.setChecked(self.config.verbose)
 
         # Persist clipboard to file (user profile)
@@ -478,13 +479,6 @@ class OptionsUi(ui_common.BaseDialogUi):
         self.remote_control_layout.addWidget(self.remote_control_port)
         self.remote_control_layout.addStretch()
 
-
-
-
-
-
-
-
         # Default action selection
         self.default_action_widget = QtWidgets.QWidget()
         self.default_action_widget.setContentsMargins(0,0,0,0)
@@ -599,10 +593,6 @@ class OptionsUi(ui_common.BaseDialogUi):
         layout.addWidget(self.osc_port)
         layout.addStretch()
         layout.setContentsMargins(0,0,0,0)
-        
-        
-
-
         
         self.general_layout.addWidget(container)
         self.general_layout.addWidget(self.show_mode_change_message)
@@ -1166,7 +1156,7 @@ This setting is also available on a profile by profile basis on the profile tab,
 
     def _add_profile_map_cb(self):
         ''' adds a new profile mapping '''
-        item = gremlin.base_profile.ProfileMapItem()
+        item = gremlin.profile.ProfileMapItem()
         self._profile_mapper.register(item)
         self.populate_map()
 
@@ -1210,7 +1200,7 @@ This setting is also available on a profile by profile basis on the profile tab,
              self.map_layout.addWidget(missing, 0, 0)
              return
 
-        item: gremlin.base_profile.ProfileMapItem
+        item: gremlin.profile.ProfileMapItem
         self._profile_mapper.validate()
         for index, item in enumerate(self._profile_mapper.items()):
 
@@ -1324,17 +1314,17 @@ This setting is also available on a profile by profile basis on the profile tab,
 
     def _default_mode_changed(self):
         widget = self.sender()
-        item : gremlin.base_profile.ProfileMapItem = widget.data
+        item : gremlin.profile.ProfileMapItem = widget.data
         item.default_mode = widget.currentText()
 
     def _restore_changed(self, checked):
         widget = self.sender()
-        item : gremlin.base_profile.ProfileMapItem = widget.data
+        item : gremlin.profile.ProfileMapItem = widget.data
         item.restore_mode = checked
 
     def _force_numlock_cb(self, checked):
         widget = self.sender()
-        item : gremlin.base_profile.ProfileMapItem = widget.data
+        item : gremlin.profile.ProfileMapItem = widget.data
         item.numlock_force = checked
         
 
@@ -1384,7 +1374,7 @@ This setting is also available on a profile by profile basis on the profile tab,
         message_box = QtWidgets.QMessageBox()
         message_box.setText("Delete confirmation")
         message_box.setInformativeText("This will delete this profile association.\nAre you sure?")
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         message_box.setIconPixmap(pixmap)
         message_box.setStandardButtons(
@@ -1406,7 +1396,7 @@ This setting is also available on a profile by profile basis on the profile tab,
         ''' duplicates the current entry '''
         widget = self.sender()
         item = widget.data
-        duplicate_item = gremlin.base_profile.ProfileMapItem(item.profile, item.process)
+        duplicate_item = gremlin.profile.ProfileMapItem(item.profile, item.process)
         self._profile_mapper.register(duplicate_item)
         self.queue_refresh.emit()
 
@@ -2034,7 +2024,7 @@ The setting can be overriden by the global mode reload option set in Options for
         message_box = QtWidgets.QMessageBox()
         message_box.setText("Delete confirmation")
         message_box.setInformativeText(f"Delete mode {mode_name}?<br>This will delete this mode and all associated mappings.<br>Are you sure?")
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         message_box.setIconPixmap(pixmap)
         message_box.setStandardButtons(
@@ -2112,7 +2102,7 @@ The setting can be overriden by the global mode reload option set in Options for
                 )
             else:
                 for device in self._profile.devices.values():
-                    new_mode = gremlin.base_profile.Mode(device)
+                    new_mode = gremlin.profile.Mode(device)
                     new_mode.name = name
                     device.modes[name] = new_mode
                 
@@ -2461,7 +2451,7 @@ class SubstituteDialog(QtWidgets.QDialog):
         
 
         # get current profile
-        profile : gremlin.base_profile.Profile = gremlin.shared_state.current_profile
+        profile : gremlin.profile.Profile = gremlin.shared_state.current_profile
 
         
         self.profile_device_widget = QtWidgets.QComboBox()
@@ -2562,7 +2552,7 @@ class SubstituteDialog(QtWidgets.QDialog):
         if self.confirm_message_box(f"Replace ID '{current_guid}' with '{new_device_guid}' (no undo?)"):
             # read the XML as a text file
 
-            profile : gremlin.base_profile.Profile = gremlin.shared_state.current_profile
+            profile : gremlin.profile.Profile = gremlin.shared_state.current_profile
 
             # make a backup of the profile just in case ... roundrobin file name ...
             xml_file =  profile.profile_file

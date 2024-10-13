@@ -6,7 +6,7 @@ from lxml import etree
 from PySide6 import QtWidgets, QtCore, QtGui
 
 import gremlin.base_classes
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 import gremlin.macro
 import gremlin.ui.ui_common

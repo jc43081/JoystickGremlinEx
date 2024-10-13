@@ -20,7 +20,7 @@ import os
 from lxml import etree as ElementTree
 
 from PySide6 import QtWidgets
-import gremlin.base_profile
+import gremlin.profile
 
 from gremlin.input_types import InputType
 from gremlin.input_devices import ButtonReleaseActions
@@ -97,7 +97,7 @@ class MapToKeyboardWidget(gremlin.ui.input_item.AbstractActionWidget):
         self.button_press_dialog.show()
 
 
-class MapToKeyboardFunctor(gremlin.base_profile.AbstractFunctor):
+class MapToKeyboardFunctor(gremlin.base_conditions.AbstractFunctor):
 
     def __init__(self, action):
         super().__init__(action)

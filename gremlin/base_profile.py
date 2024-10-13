@@ -681,7 +681,7 @@ class InputItem():
     
     @description.setter
     def description(self, value):
-        return self._description
+        self._description = value
 
     @property
     def selected(self):
@@ -1242,6 +1242,7 @@ class Settings:
         self.vjoy_initial_values = {}
         self.startup_mode = None
         self.default_delay = 0.05
+        self.sc_controls_mapping = "controls_mappings\\StarCitizenControlsMapping-3.23.0.json"
 
     def to_xml(self):
         """Returns an XML node containing the settings.
@@ -1260,6 +1261,11 @@ class Settings:
         delay_node = ElementTree.Element("default-delay")
         delay_node.text = safe_format(self.default_delay, float)
         node.append(delay_node)
+
+        # Controls Mappings
+        mapping_node = ElementTree.Element("sc-controls-mapping")
+        mapping_node.text = safe_format(self.sc_controls_mapping, str)
+        node.append(mapping_node)
 
         # Process vJoy as input settings
         for vid, value in self.vjoy_as_input.items():
@@ -1298,6 +1304,11 @@ class Settings:
         self.default_delay = 0.05
         if node.find("default-delay") is not None:
             self.default_delay = float(node.find("default-delay").text)
+
+        # Controls Mapping
+        self.sc_controls_mapping = None
+        if node.find("sc-controls-mapping") is not None:
+            self.sc_controls_mapping = str(node.find("sc-controls-mapping").text)
 
         # vJoy as input settings
         self.vjoy_as_input = {}
@@ -1721,6 +1732,9 @@ class Profile():
 
         tree = ElementTree.parse(fname)
         root = tree.getroot()
+
+        # Parse settings entries - needed for Map to SC 
+        self.settings.from_xml(root.find("settings"))        
 
         self._start_mode = None
         if "start_mode" in root.attrib:

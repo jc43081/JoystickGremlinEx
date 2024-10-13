@@ -21,7 +21,7 @@ from PySide6 import QtCore, QtGui, QtMultimedia, QtWidgets
 from lxml import etree as ElementTree
 import qtawesome as qta
 
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.config
 from gremlin.input_types import InputType
 from gremlin.util import load_icon, userprofile_path
@@ -156,7 +156,7 @@ class PlaySoundWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.audio.setVolume(volume) 
             self.player.play()
 
-class PlaySoundFunctor(gremlin.base_profile.AbstractFunctor):
+class PlaySoundFunctor(gremlin.base_conditions.AbstractFunctor):
     ''' fixed for QT6 media player changes '''
 
     player = QtMultimedia.QMediaPlayer()

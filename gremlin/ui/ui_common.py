@@ -858,7 +858,7 @@ class ActionSelector(QtWidgets.QWidget):
 
         # clipboard
         self.paste_button = QtWidgets.QPushButton()
-        icon = gremlin.util.load_icon("button_paste.svg")
+        icon = gremlin.util.load_icon("gfx/button_paste.svg")
         self.paste_button.setIcon(icon)
         self.paste_button.clicked.connect(self._paste_action)
         self.paste_button.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Minimum)
@@ -1024,7 +1024,7 @@ class ModeWidget(QtWidgets.QWidget):
     """Displays the ui for mode selection and management of a device."""
 
     # Signal emitted when the mode changes
-    edit_mode_changed = QtCore.Signal(str) # when the edit mode changes
+    mode_widget_changed = QtCore.Signal(str) # when the edit mode changes
     
 
     def __init__(self, parent=None):
@@ -1134,9 +1134,7 @@ class ModeWidget(QtWidgets.QWidget):
         """
         # save the setup
         new_mode = self.mode_list[idx]
-        self.edit_mode_changed.emit(new_mode)
-
-
+        self.mode_widget_changed.emit(new_mode)
 
 
     def _create_widget(self):
@@ -1170,7 +1168,7 @@ class ModeWidget(QtWidgets.QWidget):
 
         # add the mode change button
         self.mode_change = QtWidgets.QPushButton()
-        self.mode_change.setIcon(load_icon("manage_modes.svg"))
+        self.mode_change.setIcon(load_icon("gfx/manage_modes.svg"))
         self.mode_change.setToolTip("Manage Profile Modes")
         self.mode_change.clicked.connect(self._manage_modes_cb)
 
@@ -1494,7 +1492,7 @@ class ConfirmPushButton(QtWidgets.QPushButton):
         
         from gremlin.util import load_pixmap
         message_box = QtWidgets.QMessageBox()
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         message_box.setIconPixmap(pixmap)
         message_box.setText(self.title)
@@ -1514,7 +1512,7 @@ class ConfirmBox():
 
         from gremlin.util import load_pixmap
         self._message_box = QtWidgets.QMessageBox(parent = parent)
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         self._message_box.setIconPixmap(pixmap)
         self._message_box.setText(title)
@@ -1534,7 +1532,7 @@ class MessageBox():
 
         from gremlin.util import load_pixmap
         self._message_box = QtWidgets.QMessageBox(parent = parent)
-        pixmap = load_pixmap("warning.svg")
+        pixmap = load_pixmap("gfx/warning.svg")
         pixmap = pixmap.scaled(32, 32, QtCore.Qt.KeepAspectRatio)
         self._message_box.setIconPixmap(pixmap)
         self._message_box.setText(title)

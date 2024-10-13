@@ -23,7 +23,7 @@ from reportlab.platypus import BaseDocTemplate, Paragraph, \
     Spacer, Frame, PageTemplate, Table, Flowable, PageBreak
 
 import gremlin
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.clipboard
 from gremlin.keyboard import key_from_code
 from gremlin.input_types import InputType
@@ -59,7 +59,7 @@ class InputItemData:
         :param input_item the InputItem instance this represents
         :param inherited_from mode from which this InputItem was inherited
         """
-        self.input_item : gremlin.base_profile.InputItem = input_item
+        self.input_item : gremlin.profile.InputItem = input_item
         self.inherited_from = inherited_from
     
 
@@ -453,7 +453,7 @@ class ViewInput(QtWidgets.QDialog):
         self.cb_display_by_device_widget.clicked.connect(self._mode_by_device_cb)
         self.cb_display_by_mode_widget.clicked.connect(self._mode_by_mode_cb)
         self.to_clipboard_widget = QtWidgets.QPushButton()
-        self.to_clipboard_widget.setIcon(gremlin.util.load_icon("button_copy.svg"))
+        self.to_clipboard_widget.setIcon(gremlin.util.load_icon("gfx/button_copy.svg"))
         self.to_clipboard_widget.setToolTip("Copies the data to the clipboard")
         self.to_clipboard_widget.clicked.connect(self._to_clipboard_cb)
         self.option_container_layout.addWidget(QtWidgets.QLabel("Display Mode:"))

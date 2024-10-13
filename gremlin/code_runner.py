@@ -24,7 +24,6 @@ import sys
 import time
 
 import dinput
-import dinput
 
 import gremlin
 # from gremlin import event_handler, input_devices, \

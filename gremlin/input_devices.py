@@ -927,8 +927,6 @@ class RemoteClient(QtCore.QObject):
         Remote = 2
         LocalAndRemote = 3
 
-        
-
     def __init__(self):
         """Initialises a new object."""
         QtCore.QObject.__init__(self)

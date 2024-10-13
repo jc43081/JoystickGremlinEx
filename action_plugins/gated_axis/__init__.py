@@ -20,7 +20,7 @@ import os
 from PySide6 import QtWidgets
 from lxml import etree as ElementTree
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 import gremlin.ui.input_item
 import gremlin.gated_handler
@@ -53,7 +53,7 @@ class GatedAxisWidget(gremlin.ui.input_item.AbstractActionWidget):
         pass
 
 
-class GatedAxisFunctor(gremlin.base_profile.AbstractContainerActionFunctor):
+class GatedAxisFunctor(gremlin.base_conditions.AbstractContainerActionFunctor):
 
     def __init__(self, action):
         super().__init__(action)

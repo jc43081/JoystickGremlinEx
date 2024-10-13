@@ -16,7 +16,6 @@ class ControlsMappingReader(metaclass=Singleton):
     def __init__(self, controls_mapping):
         util.log("ControlsMappingReader::init " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         util.log("ControlsMappingReader::mapping - " + controls_mapping)
-        util.log("ControlsMappingReader::current directory - " + os.getcwd())
         self.controls_mapping = controls_mapping
         self.controls_list = []
 
@@ -24,7 +23,6 @@ class ControlsMappingReader(metaclass=Singleton):
         util.log("ControlsMappingReader::getControlsMapping")
         if len(self.controls_list) == 0:
             util.log("ControlsMappingReader::loading - " + self.controls_mapping)
-            util.log("ControlsMappingReader::current directory - " + os.getcwd())
             controls_mapping_file = os.path.join(os.getcwd(), self.controls_mapping)
 
             self.controls_list = []
@@ -44,3 +42,4 @@ class ControlsMappingReader(metaclass=Singleton):
         if (self.controls_mapping != controls_mapping):
             self.controls_list = []
             self.controls_mapping = controls_mapping
+            util.log("ControlsMappingReader::reloaded - " + self.controls_mapping)

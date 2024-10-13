@@ -20,7 +20,7 @@ import os
 from PySide6 import QtWidgets
 from lxml import etree as ElementTree
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 from gremlin.ui.input_item import AbstractActionWidget
 
@@ -45,7 +45,7 @@ class NoOpActionWidget(AbstractActionWidget):
         pass
 
 
-class NoOpActionFunctor(gremlin.base_profile.AbstractFunctor):
+class NoOpActionFunctor(gremlin.base_conditions.AbstractFunctor):
 
     """Functor, executing the NoOp action."""
 

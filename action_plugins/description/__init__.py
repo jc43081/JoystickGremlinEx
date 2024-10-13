@@ -59,7 +59,7 @@ class DescriptionActionWidget(gremlin.ui.input_item.AbstractActionWidget):
 
     def _find_input_item(self, parent):
         input_item = None
-        if isinstance(parent, gremlin.profile.InputItem):
+        if isinstance(parent, gremlin.base_profile.InputItem):
             input_item = parent
         else:
             input_item = self._find_input_item(parent.parent)

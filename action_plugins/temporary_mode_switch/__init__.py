@@ -20,7 +20,7 @@ import os
 from PySide6 import QtWidgets
 from lxml import etree as ElementTree
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 import gremlin.profile
 import gremlin.ui.input_item
@@ -50,7 +50,7 @@ class TemporaryModeSwitchWidget(gremlin.ui.input_item.AbstractActionWidget):
         self.mode_list.setCurrentIndex(mode_id)
 
 
-class TemporaryModeSwitchFunctor(gremlin.base_profile.AbstractFunctor):
+class TemporaryModeSwitchFunctor(gremlin.base_conditions.AbstractFunctor):
 
     def __init__(self, action):
         super().__init__(action)

@@ -8,3 +8,8 @@ pywin32==306
 reportlab==4.1.0
 pyttsx3
 QtAwesome
+pyside6
+lxml
+msgpack
+python-rtmidi
+jsonpickle

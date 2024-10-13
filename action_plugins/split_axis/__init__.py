@@ -21,7 +21,7 @@ import os
 from PySide6 import QtCore, QtWidgets
 from lxml import etree as ElementTree
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 from gremlin.profile import safe_read, safe_format
 from gremlin import util
@@ -163,7 +163,7 @@ class SplitAxisWidget(gremlin.ui.input_item.AbstractActionWidget):
         return lambda data: self.save_vjoy_selection(axis_id, data)
 
 
-class SplitAxisFunctor(gremlin.base_profile.AbstractFunctor):
+class SplitAxisFunctor(gremlin.base_conditions.AbstractFunctor):
 
     def __init__(self, action):
         super().__init__(action)

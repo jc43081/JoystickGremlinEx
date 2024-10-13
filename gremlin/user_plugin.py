@@ -578,7 +578,7 @@ class ModeVariable(AbstractVariable):
         value_widget.setShowProfileOptions(False)
         value_widget.setLabelText("")
         value_widget.populate_selector(shared_state.current_profile, value)
-        value_widget.edit_mode_changed.connect(
+        value_widget.mode_widget_changed.connect(
             lambda x: self.value_changed.emit({"value": x})
         )
 

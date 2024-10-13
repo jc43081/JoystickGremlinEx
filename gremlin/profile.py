@@ -1027,4 +1027,3 @@ def parse_guid(value):
     # parses a GUID
     from gremlin.util import parse_guid
     return parse_guid(value)
-

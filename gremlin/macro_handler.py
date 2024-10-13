@@ -23,7 +23,7 @@ import pickle
 import time
 from PySide6 import QtCore, QtGui, QtWidgets
 
-import gremlin.base_profile
+import gremlin.profile
 import gremlin.event_handler
 from gremlin.input_types import InputType
 import gremlin.keyboard
@@ -742,9 +742,9 @@ class MacroListModel(QtCore.QAbstractListModel):
 
                   
         MacroListModel.icon_lookup =  {
-            "press": load_icon("press.svg"),
-            "release": load_icon("release.svg"),
-            "pause": load_icon("pause.svg")
+            "press": load_icon("gfx/press.svg"),
+            "release": load_icon("gfx/release.svg"),
+            "pause": load_icon("gfx/pause.svg")
         }
 
         self._data = data_storage

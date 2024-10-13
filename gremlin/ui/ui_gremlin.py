@@ -62,7 +62,7 @@ class Ui_Gremlin(object):
         self.actionActivate = QtGui.QAction(main_window)
         self.actionActivate.setCheckable(True)
         self.actionActivate.setObjectName("actionActivate")
-        self.actionActivate.setToolTip("Activate Gremlin Ex")
+        self.actionActivate.setToolTip("Activate Gremlin SC")
         self.actionNewProfile = QtGui.QAction(main_window)
         self.actionNewProfile.setObjectName("actionNewProfile")
         self.actionSaveProfile = QtGui.QAction(main_window)
@@ -114,7 +114,7 @@ class Ui_Gremlin(object):
         self.actionSwapDevices.setObjectName("actionSwapDevices")
         self.actionInputViewer = QtGui.QAction(main_window)
         self.actionInputViewer.setObjectName("actionInputViewer")
-        self.actionScVjoyMapper = QtGui.QAction(Gremlin)
+        self.actionScVjoyMapper = QtGui.QAction(main_window)
         self.actionScVjoyMapper.setObjectName("actionScVjoyMapper")        
         self.menuRecent.addAction(self.actionEmpty)
         self.menuFile.addAction(self.actionNewProfile)
@@ -198,4 +198,5 @@ class Ui_Gremlin(object):
         self.actionEmpty.setText(_translate("GremlinEx", "Empty"))
         self.actionSwapDevices.setText(_translate("GremlinEx", "Swap Devices"))
         self.actionInputViewer.setText(_translate("GremlinEx", "Input Viewer"))
+        self.actionScVjoyMapper.setText(_translate("GremlinEx", "SC Vjoy Mapper"))
 

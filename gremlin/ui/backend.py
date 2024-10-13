@@ -116,8 +116,8 @@ class Backend(QtCore.QObject):
             return 0
 
         try:
-            import gremlin.base_profile
-            item = gremlin.base_profile.InputItem()
+            import gremlin.profile
+            item = gremlin.profile.InputItem()
             item.device_guid = identifier.device_guid
             item.input_type = identifier.input_type
             item.input_id = identifier.input_id

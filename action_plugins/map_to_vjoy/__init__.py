@@ -39,7 +39,7 @@ from gremlin.util import *
 
 IdMapToButton = -2 # map to button special ID
 import gremlin.ui.input_item
-import gremlin.base_profile
+import gremlin.profile
 
 
 

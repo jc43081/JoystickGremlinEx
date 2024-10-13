@@ -56,9 +56,13 @@ class VisualizationSelector(QtWidgets.QWidget):
         d_list = []
         max_index = len(devices)
         for dev in devices:
-            if dev.device_id in tab_ids:
-                index = tab_ids.index(dev.device_id)
-                d_list.append((index, dev))
+            if hasattr(dev, 'device_id'):
+                if dev.device_id in tab_ids:
+                    index = tab_ids.index(dev.device_id)
+                    d_list.append((index, dev))
+                else:
+                    # add to the end (vjoy devices)
+                    d_list.append((max_index, dev))
             else:
                 # add to the end (vjoy devices)
                 d_list.append((max_index, dev))

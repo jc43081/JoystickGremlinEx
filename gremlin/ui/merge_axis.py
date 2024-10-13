@@ -227,7 +227,7 @@ class MergeAxisEntry(QtWidgets.QDockWidget):
 
         self.mode_selector = gremlin.ui.ui_common.ModeWidget()
         self.mode_selector.populate_selector(profile_data)
-        self.mode_selector.edit_mode_changed.connect(change_cb)
+        self.mode_selector.mode_widget_changed.connect(change_cb)
         self.mode_selector.setShowModeEdit(False)
         self.mode_selector.setShowProfileOptions(False)
         self.mode_selector.setLabelText("Profile Mode:")

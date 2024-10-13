@@ -20,7 +20,7 @@ import os
 from PySide6 import QtWidgets, QtCore
 from lxml import etree as ElementTree
 import threading
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 import gremlin.ui.input_item
 import gremlin.tts
@@ -141,7 +141,7 @@ class TextToSpeechWidget(gremlin.ui.input_item.AbstractActionWidget):
         tts.speak_single(self.action_data.text) 
 
 
-class TextToSpeechFunctor(gremlin.base_profile.AbstractFunctor):
+class TextToSpeechFunctor(gremlin.base_conditions.AbstractFunctor):
     
     tts = gremlin.tts.TextToSpeech()
 

@@ -18,7 +18,7 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/generate_wix.py",
-            "args": [ "--folder", "joystick_gremlin", "--version", "13.40.13-sc.2"],
+            "args": [ "--folder", "joystick_gremlin", "--version", "13.40.14-sc.1"],
             "cwd": "${workspaceFolder}/dist",
             "console": "integratedTerminal",
             "env": {"PYTHONPATH": "${workspaceFolder};${env:PYTHONPATH}"}

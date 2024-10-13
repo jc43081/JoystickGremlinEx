@@ -22,10 +22,10 @@ import re
 from PySide6 import QtWidgets, QtCore, QtGui
 
 import gremlin, logging
-from . import common
+import gremlin.ui.ui_common
 
 
-class ScVjoyMapperUI(common.BaseDialogUi):
+class ScVjoyMapperUI(gremlin.ui.ui_common.BaseDialogUi):
 
     """Allows the creation of a controlized Controls Profile 
     for the current Star Citize vJoy Mapping"""

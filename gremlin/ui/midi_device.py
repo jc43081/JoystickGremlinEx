@@ -37,6 +37,7 @@ import gremlin.event_handler
 import gremlin.config 
 
 
+
 ''' these MIDI objects are based on the MIDO and python-rtMIDI libraries '''
 
 class MidiCommandType(enum.Enum):

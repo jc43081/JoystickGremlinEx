@@ -212,4 +212,4 @@ def empty_copy(obj):
         def __init__(self): pass
     newcopy = Empty(  )
     newcopy.__class__ = obj.__class__
-    return newcopy      
+    return newcopy

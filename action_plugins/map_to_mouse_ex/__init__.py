@@ -10,7 +10,7 @@ from lxml import etree as ElementTree
 
 from PySide6 import QtCore, QtWidgets
 
-import gremlin.base_profile
+import gremlin.profile
 from gremlin.input_types import InputType
 from gremlin.types import MouseButton, MouseAction, MouseClickMode
 from gremlin.profile import read_bool, safe_read, safe_format
@@ -485,7 +485,7 @@ class MapToMouseExWidget(gremlin.ui.input_item.AbstractActionWidget):
         self.button_press_dialog.show()
 
 
-class MapToMouseExFunctor(gremlin.base_profile.AbstractFunctor):
+class MapToMouseExFunctor(gremlin.base_conditions.AbstractFunctor):
 
     """Implements the functionality required to move a mouse cursor.
 
