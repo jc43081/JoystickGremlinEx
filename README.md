@@ -12,7 +12,7 @@ SC Added Features
 - Tool for generating Control Profile that aligns with current vJoy ordering in Star Citizen
   - Use the tool to automatically update the Control Profile to match how Star Citizen has allocated the vJoys
   - Grab the vJoyCheck JoyStick Gremlin profile off of Nexus when using (see the Files section)
-  - At initialization and changing of modes, refreshes each vJoy axis to match their current joystick values
+- At initialization and changing of modes, refreshes each vJoy axis to match the current joystick values
 
 Current Support:
 - 3.24.2
