@@ -595,7 +595,7 @@ def find_file(file_path, root_folder = None):
             extensions = [ext]
         else:
             extensions = [".svg",".png"]
-        circuit_breaker = 1000
+        circuit_breaker = 2000
         for dirpath, _, filenames in os.walk(root_folder):
             circuit_breaker-=1
             if circuit_breaker == 0:

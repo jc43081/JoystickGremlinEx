@@ -1701,6 +1701,7 @@ class ModeManagerUi(ui_common.BaseDialogUi):
         # Disable keyboard event handler
         el = gremlin.event_handler.EventListener()
         el.keyboard_hook.stop()
+        
 
     def closeEvent(self, event):
         """Emits the closed event when this widget is being closed.
@@ -1934,11 +1935,6 @@ The setting can be overriden by the global mode reload option set in Options for
 
         # modes can be deleted except the last one
         return lambda: self._delete_mode(mode)
-        
-
-
-
-
 
 
     def _change_mode_inheritance(self, mode, inherit):
@@ -2017,8 +2013,8 @@ The setting can be overriden by the global mode reload option set in Options for
             self._fire_mode_change()
 
     def _fire_mode_change(self):
-        eh = gremlin.event_handler.EventListener()
-        eh.modes_changed.emit()
+        el = gremlin.event_handler.EventListener()
+        el.modes_changed.emit()
 
     def _delete_mode(self, mode_name):
         message_box = QtWidgets.QMessageBox()
@@ -2102,7 +2098,7 @@ The setting can be overriden by the global mode reload option set in Options for
                 )
             else:
                 for device in self._profile.devices.values():
-                    new_mode = gremlin.profile.Mode(device)
+                    new_mode = gremlin.base_profile.Mode(device)
                     new_mode.name = name
                     device.modes[name] = new_mode
                 

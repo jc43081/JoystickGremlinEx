@@ -354,6 +354,7 @@ class InputItemListView(ui_common.AbstractView):
 
         el = gremlin.event_handler.EventListener()
         el.profile_device_mapping_changed.connect(self._profile_device_mapping_changed)
+        el.action_description_changed.connect(self.refresh_item_description)
 
     @property
     def current_index(self):
@@ -363,6 +364,9 @@ class InputItemListView(ui_common.AbstractView):
     def current_device(self):
         ''' gets the device associated with this list view '''
         return self.model._device_data
+
+    def refresh_item_description(self):
+        self.redraw_index(self._current_index)
 
 
     def _profile_device_mapping_changed(self, event):

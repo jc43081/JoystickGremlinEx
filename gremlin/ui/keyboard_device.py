@@ -243,9 +243,10 @@ class KeyboardInputItem():
         is_latched = self._key.is_latched
         self._title_name = f"Key input {'(latched)'if is_latched else ''}"
 
-        self._display_name = self._key.latched_name
-        self._description = self.key.latched_code
-        self._display_tooltip = self._key.latched_name + " " + self.key.latched_code
+        if is_latched:
+            self._display_name = self._key.latched_name
+            self._description = self.key.latched_code
+            self._display_tooltip = self._key.latched_name + " " + self.key.latched_code
 
     def to_string(self):
         return f"KeyboardInputItem: pair: {self.key_tuple} name: {self._display_name}"

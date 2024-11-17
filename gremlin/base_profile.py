@@ -341,7 +341,7 @@ class AbstractContainer(ProfileData):
     def hardware_input_type(self):
         ''' gets the type of hardware device attached to this '''
         return self.device_input_type
-    
+
 
 
     def add_action(self, action, index=-1):
@@ -1019,7 +1019,8 @@ class AbstractAction(ProfileData):
         if value:
             logging.getLogger("system").info(f"Functor: {self.name} {type(self).__name__} enabled")
 
-        
+    def clean_up(self):
+        pass    
 
     @property
     def enabled(self):
@@ -1242,7 +1243,7 @@ class Settings:
         self.vjoy_initial_values = {}
         self.startup_mode = None
         self.default_delay = 0.05
-        self.sc_controls_mapping = "controls_mappings\\StarCitizenControlsMapping-3.23.0.json"
+        self.sc_controls_mapping = "controls_mappings\\StarCitizenControlsMapping-3.24.2.json"
 
     def to_xml(self):
         """Returns an XML node containing the settings.
@@ -1581,8 +1582,8 @@ class Profile():
             new_mode.parent = self.get_default_mode()
             device.modes[name] = new_mode
 
-        eh = gremlin.event_handler.EventListener()
-        eh.modes_changed.emit()
+        el = gremlin.event_handler.EventListener()
+        el.modes_changed.emit()
         return True
     
     def remove_mode(self, name):
@@ -1614,8 +1615,8 @@ class Profile():
         for device in self.devices.values():
             del device.modes[name]
 
-        eh = gremlin.event_handler.EventListener()
-        eh.modes_changed.emit()
+        el = gremlin.event_handler.EventListener()
+        el.modes_changed.emit()
 
     def get_root_modes(self):
         """Returns a list of root modes.

@@ -218,7 +218,7 @@ class QFloatLineEdit(QtWidgets.QLineEdit):
 
     valueChanged = QtCore.Signal(float) # fires when the value changes
 
-    def __init__(self, data = None, min_range = -1.0, max_range = 1.0, decimals = 3, step = 0.01, parent = None):
+    def __init__(self, data = None, min_range = -1.0, max_range = 1.0, decimals = 3, step = 0.01, value = 0.0, parent = None):
         super().__init__(parent)
         self._min_range = min_range
         self._max_range = max_range
@@ -231,8 +231,8 @@ class QFloatLineEdit(QtWidgets.QLineEdit):
         self.setValidator(self._validator)
         self.textChanged.connect(self._validate)
         self.installEventFilter(self)
-        self.setText("0")
-        self.setValue(0.0)
+        #self.setText("0")
+        self.setValue(value)
         self._data = data
 
     @property
@@ -269,15 +269,15 @@ class QFloatLineEdit(QtWidgets.QLineEdit):
 
         
     def _update_value(self, value):
-        other = self.value()
-        if value is None or other is None:
+        if value is None:
             return
-        s_value = f"{value:0.{self._decimals}f}"
-        if s_value != self.text():
-            self.setText(s_value)
-        if other != value:
+        other = self.value()
+        if other is None or other != value:
+            s_value = f"{value:0.{self._decimals}f}"
+            if s_value != self.text():
+                self.setText(s_value)
+            
             self.valueChanged.emit(value)
-
 
         
     @QtCore.Slot()
@@ -2104,10 +2104,7 @@ class AxesCurrentState(QtWidgets.QGroupBox):
         super().__init__(parent)
 
         self.device = device
-        if device.is_virtual:
-            self.setTitle(f"{device.name} #{device.vjoy_id:d} - Axes")
-        else:
-            self.setTitle(f"{device.name} - Axes")
+        self.setTitle(f"{device.name} - Axes")
 
         self.axes = [None]
         axes_layout = QtWidgets.QHBoxLayout()
@@ -2232,10 +2229,7 @@ class HatState(QtWidgets.QGroupBox):
 
         self._event_times = {}
 
-        if device.is_virtual:
-            self.setTitle(f"{device.name} #{device.vjoy_id:d} - Hats")
-        else:
-            self.setTitle(f"{device.name} - Hats")
+        self.setTitle(f"{device.name} - Hats")
 
         self.hats = [None]
         hat_layout = QtWidgets.QGridLayout()
@@ -2279,10 +2273,7 @@ class AxesTimeline(QtWidgets.QGroupBox):
         """
         super().__init__(parent)
 
-        if device.is_virtual:
-            self.setTitle(f"{device.name} #{device.vjoy_id:d} - Axes")
-        else:
-            self.setTitle(f"{device.name} - Axes")
+        self.setTitle(f"{device.name} - Axes")
 
         self.setLayout(QtWidgets.QVBoxLayout())
         self.plot_widget = TimeLinePlotWidget()
@@ -2592,10 +2583,7 @@ class ButtonState(QtWidgets.QGroupBox):
 
         self._event_times = {}
 
-        if device.is_virtual:
-            self.setTitle(f"{device.name} #{device.vjoy_id:d} - Buttons")
-        else:
-            self.setTitle(f"{device.name} - Buttons")
+        self.setTitle(f"{device.name} - Buttons")
 
         self.buttons = [None]
         button_layout = QtWidgets.QGridLayout()

@@ -206,7 +206,7 @@ class Clipboard(QtCore.QObject):
     @property
     def is_action(self):
         ''' true if the data item is an action '''
-        from gremlin.profile import AbstractAction
+        from gremlin.base_profile import AbstractAction
         return self.data is not None and isinstance(self.data, AbstractAction)
     
     @property

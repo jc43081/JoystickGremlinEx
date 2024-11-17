@@ -204,6 +204,9 @@ class GremlinUi(QtWidgets.QMainWindow):
         else:
             self.new_profile()
 
+        # hook to allow reload of profiles
+        el.reload_profile.connect(self._do_reload_profile)
+
         # Setup the recent files menu
         self._create_recent_profiles()
 
@@ -493,10 +496,11 @@ class GremlinUi(QtWidgets.QMainWindow):
     def manage_modes(self):
         """Opens the mode management window."""
         self.modal_windows["mode_manager"] = \
-            gremlin.ui.dialogs.ModeManagerUi(self._profile)
-        self.modal_windows["mode_manager"].modes_changed.connect(
-            self._mode_configuration_changed
-        )
+            gremlin.ui.dialogs.ModeManagerUi(self.profile)
+        el = gremlin.event_handler.EventListener()
+        # el.modes_changed.connect(
+        #     self._mode_configuration_changed
+        # )
         self.modal_windows["mode_manager"].show()
         self.modal_windows["mode_manager"].closed.connect(
             lambda: self._remove_modal_window("mode_manager")
@@ -505,7 +509,7 @@ class GremlinUi(QtWidgets.QMainWindow):
     def merge_axis(self):
         """Opens the modal window to define axis merging."""
         self.modal_windows["merge_axis"] = \
-            gremlin.ui.merge_axis.MergeAxisUi(self._profile)
+            gremlin.ui.merge_axis.MergeAxisUi(self.profile)
         self.modal_windows["merge_axis"].show()
         self.modal_windows["merge_axis"].closed.connect(
             lambda: self._remove_modal_window("merge_axis")
@@ -792,28 +796,28 @@ class GremlinUi(QtWidgets.QMainWindow):
         if not self._save_changes_request():
             return
 
-        self._profile = gremlin.profile.Profile()
+        self.profile = gremlin.base_profile.Profile()
 
         # For each connected device create a new empty device entry
         # in the new profile
         for device in gremlin.joystick_handling.physical_devices():
-            self._profile.initialize_joystick_device(device, ["Default"])
+            self.profile.initialize_joystick_device(device, ["Default"])
 
         # Create keyboard device entry
-        keyboard_device = gremlin.profile.Device(self._profile)
+        keyboard_device = gremlin.base_profile.Device(self.profile)
         keyboard_device.name = "keyboard"
         keyboard_device.device_guid = dinput.GUID_Keyboard
-        keyboard_device.type = gremlin.profile.DeviceType.Keyboard
-        self._profile.devices[dinput.GUID_Keyboard] = keyboard_device
+        keyboard_device.type = gremlin.base_profile.DeviceType.Keyboard
+        self.profile.devices[dinput.GUID_Keyboard] = keyboard_device
 
         # Update profile information
         self._profile_fname = None
         self._current_mode = None
         self._update_window_title()
-        gremlin.shared_state.current_profile = self._profile
+        gremlin.shared_state.current_profile = self.profile
 
         # Create a default mode
-        for device in self._profile.devices.values():
+        for device in self.profile.devices.values():
             device.ensure_mode_exists("Default")
         self._current_mode = "Default"
 
@@ -821,7 +825,7 @@ class GremlinUi(QtWidgets.QMainWindow):
         self._create_tabs()
 
         # Update everything to the new mode
-        self._mode_configuration_changed()
+        self._mode_configuration_changed(self._current_mode)
 
     def save_profile(self):
         """Saves the current profile to the hard drive.
@@ -845,15 +849,15 @@ class GremlinUi(QtWidgets.QMainWindow):
             "XML files (*.xml)"
         )
         if fname != "":
-            self._profile.to_xml(fname)
-            self._profile_fname = fname
+            self.profile.to_xml(fname)
+            self.profile_fname = fname
             self.config.last_profile = fname
             self._create_recent_profiles()
         self._update_window_title()
 
     def reveal_profile(self):
         ''' opens the profile in explorer '''
-        if self._profile_fname and os.path.isfile(self._profile_fname):
+        if self.profile_fname and os.path.isfile(self._profile_fname):
             path = os.path.dirname(self._profile_fname)
             path = os.path.realpath(path)
             webbrowser.open(path)
@@ -1949,6 +1953,13 @@ class GremlinUi(QtWidgets.QMainWindow):
     @profile.setter
     def profile(self, value):
         gremlin.shared_state.current_profile = value
+
+    def _do_reload_profile(self, fname):
+        """Prompts the user to select a profile file to load."""
+        if not self._save_changes_request():
+            return
+        # Reload after save        
+        self._do_load_profile(fname)
 
 
     def _do_load_profile(self, fname):
