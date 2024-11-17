@@ -3,13 +3,15 @@
 cd /d %0\..
 
 set version=%1
-cd dist
-if exist joystick_gremlin\ (
- del joystick_gremlin\ /q
-) else (
- md joystick_gremlin
+if exist dist (
+    cd dist
+    if exist joystick_gremlin\ (
+    del joystick_gremlin\ /q
+    ) else (
+    md joystick_gremlin
+    )
+    cd ..
 )
-cd ..
 
 @echo "Building executable ..."
 python -m PyInstaller -y --clean joystick_gremlin.spec
