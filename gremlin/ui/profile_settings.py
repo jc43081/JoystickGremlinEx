@@ -97,7 +97,7 @@ class ProfileSettingsWidget(QDataWidget):
             if self.profile_settings.vjoy_as_input.get(dev.vjoy_id) is True:
                 continue
 
-            widget = QtWidgets.QGroupBox(f"{dev.name} #{dev.vjoy_id}")
+            widget = QtWidgets.QGroupBox(f"{dev.name}")
             box_layout = QtWidgets.QVBoxLayout()
             widget.setLayout(box_layout)
             box_layout.addWidget(VJoyAxisDefaultsWidget(
