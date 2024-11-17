@@ -23,7 +23,7 @@ import mapping_reader
 import logging
 import threading
 import time
-from xml.etree import ElementTree
+from lxml.etree import ElementTree
 
 from PySide6 import QtWidgets, QtCore
 
@@ -166,6 +166,13 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
             # Save changes so the UI updates properly
             self.save_controls_changes()
+        except gremlin.error.ProfileError as e:
+            util.display_error(
+                f"Your profile contains a bad SC Mapping. {e}\n\n" + 
+                "Check your Controls Mapping file under the Settings tab. The bad mapping " +
+                "defaulted to Vehicles - Seats and Operator Modes: Emergency Exit Seat. "
+            )
+            log_sys_error(str(e))
         except gremlin.error.GremlinError as e:
             util.display_error(
                 f"A needed vJoy device is not accessible: {e}\n\n" +
@@ -173,6 +180,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
                 "not what has been specified."
             )
             log_sys_error(str(e))
+        
 
     def save_controls_changes(self):
         """Saves UI contents to the profile data storage."""
@@ -209,7 +217,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             if len(container.action_sets) > 0:
                 for action_set in container.action_sets:
                     for action in action_set:
-                        if action.name == "Description":
+                        if action and action.name == "Description":
                             if self.action_data.parent_input_item.description != action.description:
                                 self.action_data.parent_input_item.description = action.description
                                 update_description = True
@@ -420,15 +428,19 @@ class MapToSc(gremlin.base_profile.AbstractAction):
         reader.resetControlsMapping(controls_mapping)
 
     def getVjoyDeviceId(self, category, control):
-        # Finally get the selected control from the controls list
-        category_entry = next((x for x in self.controls_list if x["category_id"] == category), None) 
+        # Make sure the mapping is valid otherwise throw an exception
+        category_entry = next((x for x in self.controls_list if x["category_id"] == category), None)
         control_entry = next((x for x in category_entry["values"] if x["id"] == control), None)
+        if control_entry is None:
+            raise gremlin.error.GremlinError("SC Mapping is missing. Make sure your Controls Mapping file is the right version.")
         vjoy_device_id = control_entry["vjoy"]
         return vjoy_device_id
 
     def getVjoyInputId(self, category, control):
         category_entry = next((x for x in self.controls_list if x["category_id"] == category), None) 
         control_entry = next((x for x in category_entry["values"] if x["id"] == control), None)
+        if control_entry is None:
+            raise gremlin.error.GremlinError("SC Mapping is missing. Make sure your Controls Mapping file is the right version.")
         vjoy_input_type = control_entry["type"]
         if "axis" in vjoy_input_type:
             vjoy_input_id = control_entry["axis"]
@@ -596,11 +608,11 @@ class ScControlsSelector(QtWidgets.QWidget):
     def set_selection(self, input_type, category_id, control_id):
         gremlin.util.log("ControlsSelector::set selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         if category_id not in self._category_registry:
-            return
+            raise ProfileError(f"Bad Mapping - Category Id: {category_id}, Control Id: {control_id} ")
 
         control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
         if next((x for x in control["values"] if x["id"] == control_id), None) == None:
-            return
+            raise ProfileError(f"Bad Mapping - Category Id: {category_id}, Control Id: {control_id} ")
 
         # # Get the index of the combo box associated with this category
         category_index = [index for (index, category) in enumerate(self._category_registry) if category == category_id][0]
