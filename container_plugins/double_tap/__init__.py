@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,16 +19,18 @@ import copy
 import logging
 import threading
 import time
-from xml.etree import ElementTree
+from lxml import etree as ElementTree
 
 from PySide6 import QtWidgets
 
 import gremlin
-import gremlin.ui.common
+import gremlin.ui.ui_common
 import gremlin.ui.input_item
+from gremlin.ui.input_item import AbstractContainerWidget
+from gremlin.base_profile import AbstractContainer
 
 
-class DoubleTapContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
+class DoubleTapContainerWidget(AbstractContainerWidget):
 
     """DoubleTap container for actions for double or single taps."""
 
@@ -50,7 +52,7 @@ class DoubleTapContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
         self.options_layout.addWidget(
             QtWidgets.QLabel("<b>Double-tap delay: </b>")
         )
-        self.delay_input = gremlin.ui.common.DynamicDoubleSpinBox()
+        self.delay_input = gremlin.ui.ui_common.DynamicDoubleSpinBox()
         self.delay_input.setRange(0.1, 2.0)
         self.delay_input.setSingleStep(0.1)
         self.delay_input.setValue(0.5)
@@ -77,27 +79,29 @@ class DoubleTapContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
         if self.profile_data.action_sets[0] is None:
             self._add_action_selector(
                 lambda x: self._add_action(0, x),
-                "Single Tap"
+                "Single Tap",
+                lambda x: self._paste_action(0, x),
             )
         else:
             self._create_action_widget(
                 0,
                 "Single Tap",
                 self.action_layout,
-                gremlin.ui.common.ContainerViewTypes.Action
+                gremlin.ui.ui_common.ContainerViewTypes.Action
             )
 
         if self.profile_data.action_sets[1] is None:
             self._add_action_selector(
                 lambda x: self._add_action(1, x),
-                "Double Tap"
+                "Double Tap",
+                lambda x: self._paste_action(1, x),
             )
         else:
             self._create_action_widget(
                 1,
                 "Double Tap",
                 self.action_layout,
-                gremlin.ui.common.ContainerViewTypes.Action
+                gremlin.ui.ui_common.ContainerViewTypes.Action
             )
 
     def _create_condition_ui(self):
@@ -107,7 +111,7 @@ class DoubleTapContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
                     0,
                     "Single Tap",
                     self.activation_condition_layout,
-                    gremlin.ui.common.ContainerViewTypes.Condition
+                    gremlin.ui.ui_common.ContainerViewTypes.Condition
                 )
 
             if self.profile_data.action_sets[1] is not None:
@@ -115,19 +119,20 @@ class DoubleTapContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
                     1,
                     "Double Tap",
                     self.activation_condition_layout,
-                    gremlin.ui.common.ContainerViewTypes.Condition
+                    gremlin.ui.ui_common.ContainerViewTypes.Condition
                 )
 
-    def _add_action_selector(self, add_action_cb, label):
+    def _add_action_selector(self, add_action_cb, label, paste_action_cb):
         """Adds an action selection UI widget.
 
         :param add_action_cb function to call when an action is added
         :param label the description of the action selector
         """
-        action_selector = gremlin.ui.common.ActionSelector(
+        action_selector = gremlin.ui.ui_common.ActionSelector(
             self.profile_data.get_input_type()
         )
         action_selector.action_added.connect(add_action_cb)
+        action_selector.action_paste.connect(paste_action_cb)
 
         group_layout = QtWidgets.QVBoxLayout()
         group_layout.addWidget(action_selector)
@@ -164,6 +169,18 @@ class DoubleTapContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
         self.profile_data.action_sets[index].append(action_item)
         self.profile_data.create_or_delete_virtual_button()
         self.container_modified.emit()
+
+
+    def _paste_action(self, index, action):
+        ''' pastes an action '''
+        plugin_manager = gremlin.plugin_manager.ActionPlugins()
+        action_item = plugin_manager.duplicate(action)
+        if self.profile_data.action_sets[index] is None:
+            self.profile_data.action_sets[index] = []
+        self.profile_data.action_sets[index].append(action_item)
+        self.profile_data.create_or_delete_virtual_button()
+        self.container_modified.emit()
+
 
     def _delay_changed_cb(self, value):
         """Updates the activation delay value.
@@ -293,7 +310,7 @@ class DoubleTapContainerFunctor(gremlin.base_classes.AbstractFunctor):
             self.single_tap.process_event(event_release, value_release)
             self.processed_single_tap = True
 
-class DoubleTapContainer(gremlin.base_classes.AbstractContainer):
+class DoubleTapContainer(AbstractContainer):
 
     """A container with two actions which are triggered based on the delay
     between the taps.
@@ -306,12 +323,14 @@ class DoubleTapContainer(gremlin.base_classes.AbstractContainer):
     tag = "double_tap"
     functor = DoubleTapContainerFunctor
     widget = DoubleTapContainerWidget
-    input_types = [
-        gremlin.common.InputType.JoystickAxis,
-        gremlin.common.InputType.JoystickButton,
-        gremlin.common.InputType.JoystickHat,
-        gremlin.common.InputType.Keyboard
-    ]
+
+    # override default allowed inputs here
+    # input_types = [
+    #     InputType.JoystickAxis,
+    #     InputType.JoystickButton,
+    #     InputType.JoystickHat,
+    #     InputType.Keyboard
+    # ]
     interaction_types = [
         gremlin.ui.input_item.ActionSetView.Interactions.Edit,
     ]

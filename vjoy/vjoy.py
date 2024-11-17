@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@ from vjoy.vjoy_interface import VJoyState, VJoyInterface
 from gremlin.error import VJoyError
 import gremlin.common
 import gremlin.spline
+import gremlin.types
+
 
 
 def _error_string(vid, iid, value):
@@ -141,6 +143,8 @@ def hat_configuration_valid(vjoy_id):
     return continuous_count >= discrete_count
 
 
+
+
 class Axis:
 
     """Represents an analog axis in vJoy, allows setting the value
@@ -223,6 +227,8 @@ class Axis:
 
         :param value the position of the axis in the range [-1, 1]
         """
+        
+
         self.vjoy_dev.ensure_ownership()
 
         # Log an error on invalid data but continue processing by clamping
@@ -244,9 +250,10 @@ class Axis:
                 self.vjoy_id,
                 self.axis_id
         ):
-            raise VJoyError(
-                f"Failed setting axis value - {_error_string(self.vjoy_id, self.axis_id, self._value)}"
-            )
+            from gremlin.ui import backend
+            from gremlin.util import log_sys_warn
+            log_sys_warn(f"Failed setting axis value - {_error_string(self.vjoy_id, self.axis_id, self._value)}")
+           
         self.vjoy_dev.used()
 
     def set_absolute_value(self, value):
@@ -734,8 +741,8 @@ class VJoy:
         for i, axis in enumerate(AxisName):
             if VJoyInterface.GetVJDAxisExist(self.vjoy_id, axis.value) > 0:
                 axes[i+1] = Axis(self, axis.value)
-                self._axis_names[i+1] = gremlin.common.AxisNames.to_string(
-                    gremlin.common.AxisNames(i+1)
+                self._axis_names[i+1] = gremlin.types.AxisNames.to_string(
+                    gremlin.types.AxisNames(i+1)
                 )
                 self._axis_lookup[len(self._axis_names)] = i+1
                 self._axis_lookup[axis] = i+1

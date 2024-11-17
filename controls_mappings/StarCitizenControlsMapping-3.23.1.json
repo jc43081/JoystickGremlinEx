@@ -2636,7 +2636,7 @@
                 "action": ""
             },
             {
-                "name": "PIP Precision Toggle",
+                "name": "PIP Precision Lines Toggle",
                 "id": 117,
                 "type": "button",
                 "vjoy": 3,
@@ -2645,7 +2645,7 @@
                 "action": "v_weapon_pip_prec_line_toggle"
             },
             {
-                "name": "PIP Precision On",
+                "name": "PIP Precision Lines On",
                 "id": 118,
                 "type": "button",
                 "vjoy": 3,
@@ -2654,7 +2654,7 @@
                 "action": "v_weapon_pip_prec_line_on"
             },
             {
-                "name": "PIP Precision off",
+                "name": "PIP Precision Lines off",
                 "id": 119,
                 "type": "button",
                 "vjoy": 3,

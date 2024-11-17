@@ -20,9 +20,9 @@ sys.path.append(".")
 
 import pytest
 import uuid
-from xml.etree import ElementTree
+from lxml import etree as ElementTree
 
-import dill
+import dinput
 import gremlin.error as error
 import gremlin.joystick_handling
 import gremlin.types as types

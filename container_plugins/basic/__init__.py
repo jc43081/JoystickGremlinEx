@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,14 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from xml.etree import ElementTree
+from lxml import etree as ElementTree
 
 import gremlin
-import gremlin.ui.common
+from gremlin.input_types import InputType
+import gremlin.base_classes
+import gremlin.ui.ui_common
 import gremlin.ui.input_item
+import gremlin.clipboard
+import gremlin.types
+from gremlin.base_profile import AbstractContainer
+import gremlin.execution_graph
+from gremlin.ui.input_item import AbstractContainerWidget
 
-
-class BasicContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
+class BasicContainerWidget(AbstractContainerWidget):
 
     """Basic container which holds a single action."""
 
@@ -43,21 +49,23 @@ class BasicContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
             widget = self._create_action_set_widget(
                 self.profile_data.action_sets[0],
                 "Basic",
-                gremlin.ui.common.ContainerViewTypes.Action
+                gremlin.ui.ui_common.ContainerViewTypes.Action
             )
             self.action_layout.addWidget(widget)
             widget.redraw()
             widget.model.data_changed.connect(self.container_modified.emit)
         else:
-            if self.profile_data.get_device_type() == gremlin.common.DeviceType.VJoy:
-                action_selector = gremlin.ui.common.ActionSelector(
-                    gremlin.common.DeviceType.VJoy
+            if self.profile_data.get_device_type() == gremlin.types.DeviceType.VJoy:
+                action_selector = gremlin.ui.ui_common.ActionSelector(
+                    gremlin.types.DeviceType.VJoy
                 )
             else:
-                action_selector = gremlin.ui.common.ActionSelector(
+                action_selector = gremlin.ui.ui_common.ActionSelector(
                     self.profile_data.parent.input_type
                 )
             action_selector.action_added.connect(self._add_action)
+            action_selector.action_paste.connect(self._paste_action)
+
             self.action_layout.addWidget(action_selector)
 
     def _create_condition_ui(self):
@@ -68,19 +76,38 @@ class BasicContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
             widget = self._create_action_set_widget(
                 self.profile_data.action_sets[0],
                 "Basic",
-                gremlin.ui.common.ContainerViewTypes.Condition
+                gremlin.ui.ui_common.ContainerViewTypes.Condition
             )
             self.activation_condition_layout.addWidget(widget)
             widget.redraw()
             widget.model.data_changed.connect(self.container_modified.emit)
 
-    def _add_action(self, action_name):
+    def _add_action(self, action_data):
         """Adds a new action to the container.
 
         :param action_name the name of the action to add
         """
+        from gremlin.clipboard import Clipboard
+        if action_data is None:
+            return
+        if isinstance(action_data, str):
+            action_name = action_data
+            plugin_manager = gremlin.plugin_manager.ActionPlugins()
+            action_item = plugin_manager.get_class(action_name)(self.profile_data)
+        elif isinstance(action_data, Clipboard):
+            # paste operation
+            if action_data.is_action:
+                # verify the action in the clipboard is appropriate for this input
+
+                action_item = plugin_manager.duplicate(action_data.data)
+
+        self.profile_data.add_action(action_item)
+        self.container_modified.emit()
+
+    def _paste_action(self, action):
+        ''' paste action'''
         plugin_manager = gremlin.plugin_manager.ActionPlugins()
-        action_item = plugin_manager.get_class(action_name)(self.profile_data)
+        action_item = plugin_manager.duplicate(action)
         self.profile_data.add_action(action_item)
         self.container_modified.emit()
 
@@ -103,7 +130,7 @@ class BasicContainerWidget(gremlin.ui.input_item.AbstractContainerWidget):
             return "Basic"
 
 
-class BasicContainerFunctor(gremlin.base_classes.AbstractFunctor):
+class BasicContainerFunctor(gremlin.base_profile.AbstractFunctor):
 
     """Executes the contents of the associated basic container."""
 
@@ -123,19 +150,20 @@ class BasicContainerFunctor(gremlin.base_classes.AbstractFunctor):
         return self.action_set.process_event(event, value)
 
 
-class BasicContainer(gremlin.base_classes.AbstractContainer):
+class BasicContainer(AbstractContainer):
 
     """Represents a container which holds exactly one action."""
 
     name = "Basic"
     tag = "basic"
 
-    input_types = [
-        gremlin.common.InputType.JoystickAxis,
-        gremlin.common.InputType.JoystickButton,
-        gremlin.common.InputType.JoystickHat,
-        gremlin.common.InputType.Keyboard
-    ]
+    # input_types = [
+    #     InputType.JoystickAxis,
+    #     InputType.JoystickButton,
+    #     InputType.JoystickHat,
+    #     InputType.Keyboard
+    # ]
+    
     interaction_types = []
 
     functor = BasicContainerFunctor
@@ -149,11 +177,11 @@ class BasicContainer(gremlin.base_classes.AbstractContainer):
         super().__init__(parent)
     
     def add_action(self, action, index=-1):
-        assert isinstance(action, gremlin.base_classes.AbstractAction)
+        assert isinstance(action, gremlin.base_profile.AbstractAction)
 
         # Make sure if we're dealing with axis with remap and response curve
         # actions that they are arranged sensibly
-        if action.get_input_type() == gremlin.common.InputType.JoystickAxis:
+        if action.get_input_type() == InputType.JoystickAxis:
             remap_sets = []
             curve_sets = []
             for container in self.parent.containers:

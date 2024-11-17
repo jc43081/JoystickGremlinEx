@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,16 +20,17 @@ import copy
 
 from PySide6 import QtWidgets
 
-import dill
+import dinput
 
 from gremlin import common, joystick_handling, macro, util
-import gremlin.ui.common
+import gremlin.ui.ui_common
 import gremlin.ui.input_item
+from gremlin.input_types import InputType
 
 # TODO: Retire this entire bit here as the action library will replace it
 #       in it's entirety
 
-class ProfileCreator(gremlin.ui.common.BaseDialogUi):
+class ProfileCreator(gremlin.ui.ui_common.BaseDialogUi):
 
     """Displays a dialog to create a new profile from an existing one.
 
@@ -43,7 +44,7 @@ class ProfileCreator(gremlin.ui.common.BaseDialogUi):
         :param profile_data the data to use as the template
         :param parent the parent widget of this one
         """
-        gremlin.ui.common.BaseDialogUi.__init__(self, parent)
+        gremlin.ui.ui_common.BaseDialogUi.__init__(self, parent)
         self.profile_data = profile_data
         self.new_profile = self._create_empty_profile()
 
@@ -106,7 +107,7 @@ class ProfileCreator(gremlin.ui.common.BaseDialogUi):
 
     def _create_ui(self):
         """Creates the UI of this dialog."""
-        gremlin.ui.common.clear_layout(self.main_layout)
+        gremlin.ui.ui_common.clear_layout(self.main_layout)
         self.mode_index = {}
 
         # Create the drawers for each of the modes
@@ -259,14 +260,14 @@ class ModeBindings(QtWidgets.QWidget):
         bound_input = self.bound_inputs[input_item]
 
         # Special handling of keyboards
-        if bound_input.parent.parent.device_guid == dill.GUID_Keyboard:
+        if bound_input.parent.parent.device_guid == dinput.GUID_Keyboard:
             key_name = macro.key_from_code(
                 bound_input.input_id[0],
                 bound_input.input_id[1]
             ).name
             return f"{self.device_names[bound_input.parent.parent.device_guid]} - {key_name}"
         else:
-            return f"{self.device_names[bound_input.parent.parent.device_guid]} - {gremlin.common.InputType.to_string(bound_input.input_type).capitalize()} {bound_input.input_id}"
+            return f"{self.device_names[bound_input.parent.parent.device_guid]} - {InputType.to_string(bound_input.input_type).capitalize()} {bound_input.input_id}"
 
     def _create_input_cb(self, input_item):
         """Creates a callback function for the provided input item.
@@ -285,7 +286,7 @@ class ModeBindings(QtWidgets.QWidget):
         device_lookup = {}
         for dev in devices:
             device_lookup[dev.device_guid] = dev.name
-        device_lookup[dill.GUID_Keyboard] = "Keyboard"
+        device_lookup[dinput.GUID_Keyboard] = "Keyboard"
         return device_lookup
 
 
@@ -332,7 +333,7 @@ class BindableAction(QtWidgets.QWidget):
         self.main_layout = QtWidgets.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.description = QtWidgets.QLabel(description)
-        self.bound_action = gremlin.ui.common.LeftRightPushButton(label)
+        self.bound_action = gremlin.ui.ui_common.LeftRightPushButton(label)
         self.bound_action.setMinimumWidth(200)
         self.bound_action.setMaximumWidth(200)
         self.bound_action.clicked.connect(self._bind_action)
@@ -352,11 +353,11 @@ class BindableAction(QtWidgets.QWidget):
 
     def _bind_action(self):
         """Prompts the user for the input to bind to this item."""
-        self.button_press_dialog = gremlin.ui.common.InputListenerWidget(
-            self.input_cb,
+        self.button_press_dialog = gremlin.ui.ui_common.InputListenerWidget(
             BindableAction.valid_bind_types[self.input_type],
             return_kb_event=True
         )
+        self.button_press_dialog.item_selected.connect(self.input_cb)
 
         # Display the dialog centered in the middle of the UI
         geom = self.topLevelWidget().geometry()

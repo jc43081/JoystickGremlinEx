@@ -33,15 +33,17 @@ added_files.extend(container_plugins_files)
 added_files.extend(controls_mappings_files)
 added_binaries = [
     ("vjoy/vJoyInterface.dll", "."),
-    ("dill/dill.dll", "."),
+    ("dill.dll", "."),
+	
 ]
+
 
 a = Analysis(
     ["joystick_gremlin.py"],
     pathex=['.'],
     binaries=added_binaries,
     datas=added_files,
-    hiddenimports=[],
+    hiddenimports=['mido.backends.rtmidi',"lxml","pyttsx3"],
     hookspath=None,
     runtime_hooks=None,
     excludes=None,

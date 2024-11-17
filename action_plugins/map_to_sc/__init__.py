@@ -17,23 +17,25 @@
 
 import sys, os
 sys.path.append(os.path.join(os.path.dirname(__file__)))
+import gremlin.profile
 import mapping_reader
 
 import logging
 import threading
 import time
-from xml.etree import ElementTree
+from lxml.etree import ElementTree
 
 from PySide6 import QtWidgets, QtCore
 
-from gremlin.base_classes import InputActionCondition
+from gremlin.base_conditions import InputActionCondition
 from gremlin.common import InputType
 from gremlin import input_devices, joystick_handling, util, keyboard
 from gremlin.error import ProfileError, GremlinError
 from gremlin.profile import safe_format, safe_read
-import gremlin.ui.common
+import gremlin.ui.ui_common
 import gremlin.ui.input_item
 import gremlin.ui.device_tab
+from gremlin.util import *
 
 class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
@@ -100,7 +102,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.absolute_checkbox = QtWidgets.QRadioButton("Absolute")
             self.absolute_checkbox.setChecked(True)
             self.relative_checkbox = QtWidgets.QRadioButton("Relative")
-            self.relative_scaling = gremlin.ui.common.DynamicDoubleSpinBox()
+            self.relative_scaling = gremlin.ui.ui_common.DynamicDoubleSpinBox()
 
             self.maptosc_type_layout.addStretch()
             self.maptosc_type_layout.addWidget(self.absolute_checkbox)
@@ -111,7 +113,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             self.main_layout.addWidget(self.maptosc_type_widget)
 
         # Show a message when mapping a hat not within the Hat Buttons container
-        if self.action_data.hardware_input_type == InputType.JoystickHat and self.action_data.parent.name != "Hat Buttons":
+        if self.action_data.hardware_input_type == InputType.JoystickHat and self.action_data.parent_input_item.containers[0].tag != "hat_buttons":
             self.maptosc_hat_widget = QtWidgets.QWidget()
             self.maptosc_hat_layout = QtWidgets.QHBoxLayout(self.maptosc_hat_widget)
             self.maptosc_hat_layout.addWidget(QtWidgets.QLabel("Hats require mapping a Virtual Button. Remember to select a direction on the Virtual Button tab to the right."))
@@ -135,14 +137,14 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
         # Get the input type which can change depending on the container used
         input_type = self.action_data.input_type
-        if self.action_data.parent.tag == "hat_buttons":
+        if self.action_data.parent_input_item.containers[0].tag == "hat_buttons":
             input_type = InputType.JoystickButton
 
         # Handle obscure bug which causes the action_data to contain no
         # input_type information
         if input_type is None:
             input_type = InputType.JoystickButton
-            logging.getLogger("system").warning("None as input type encountered")
+            log_sys_warn("None as input type encountered")
 
         try:
             self.controls_selector.set_selection(
@@ -164,13 +166,21 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
             # Save changes so the UI updates properly
             self.save_controls_changes()
+        except gremlin.error.ProfileError as e:
+            util.display_error(
+                f"Your profile contains a bad SC Mapping. {e}\n\n" + 
+                "Check your Controls Mapping file under the Settings tab. The bad mapping " +
+                "defaulted to Vehicles - Seats and Operator Modes: Emergency Exit Seat. "
+            )
+            log_sys_error(str(e))
         except gremlin.error.GremlinError as e:
             util.display_error(
                 f"A needed vJoy device is not accessible: {e}\n\n" +
                 "Default values have been set for the input, but they are "
                 "not what has been specified."
             )
-            logging.getLogger("system").error(str(e))
+            log_sys_error(str(e))
+        
 
     def save_controls_changes(self):
         """Saves UI contents to the profile data storage."""
@@ -196,7 +206,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             if input_type_changed:
                 self.action_modified.emit()
         except gremlin.error.GremlinError as e:
-            logging.getLogger("system").error(str(e))
+            log_sys_error(str(e))
 
 
     def _update_input_item_description(self):
@@ -207,7 +217,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
             if len(container.action_sets) > 0:
                 for action_set in container.action_sets:
                     for action in action_set:
-                        if action.name == "Description":
+                        if action and action.name == "Description":
                             if self.action_data.parent_input_item.description != action.description:
                                 self.action_data.parent_input_item.description = action.description
                                 update_description = True
@@ -216,20 +226,16 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
 
         # Use the SC Control description if its the only component
         if action_description_found == False:
-            if len(self.action_data.parent.action_sets) == 1 and len(self.action_data.parent_input_item.containers) == 1:
-                if len(self.action_data.parent.action_sets[0]) == 1:
+            if len(self.action_data.parent_input_item.containers) == 1:
+                if len(self.action_data.parent_input_item.containers[0].action_sets[0]) == 1:
                     if self.action_data.parent_input_item.description != self.action_data.description:
                         self.action_data.parent_input_item.description = self.action_data.description
                         update_description = True
-                else:
+                # if multiple actions available
+                elif len(self.action_data.parent_input_item.containers[0].action_sets[0]) > 1:
                     self.action_data.description = "Multiple Actions Defined..."
                     self.action_data.parent_input_item.description = "Multiple Actions Defined..."
                     update_description = True
-            # if multiple actions available
-            elif len(self.action_data.parent.action_sets) > 1:
-                self.action_data.description = "Multiple Actions Defined..."
-                self.action_data.parent_input_item.description = "Multiple Actions Defined..."
-                update_description = True
             # if multiple containers available
             elif len(self.action_data.parent_input_item.containers) > 1:
                 self.action_data.description = "Multiple Actions Defined..."
@@ -239,6 +245,7 @@ class MapToScWidget(gremlin.ui.input_item.AbstractActionWidget):
         if update_description:
             el = gremlin.event_handler.EventListener()
             el.action_description_changed.emit()
+
 
 class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
 
@@ -259,6 +266,34 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         self.thread = None
         self.axis_delta_value = 0.0
         self.axis_value = 0.0
+
+        if self.input_type == InputType.JoystickAxis:
+            self.device_guid = action.hardware_device.device_guid
+            self.joy = input_devices.JoystickProxy()[self.device_guid]
+            self.hardware_input_id = action.hardware_input_id
+            if self.joy is not None:
+                current_joy_value = self.joy.axis(self.hardware_input_id).value
+                el = gremlin.event_handler.EventListener()                
+                el.joystick_event.emit(gremlin.event_handler.Event(
+                        event_type=InputType.JoystickAxis,
+                        device_guid=self.device_guid,
+                        identifier=self.hardware_input_id,
+                        value=current_joy_value
+                    ))   
+                
+            eh = gremlin.event_handler.EventHandler()
+            eh.runtime_mode_changed.connect(self._mode_changed_cb)                
+
+    def _mode_changed_cb(self):
+            current_joy_value = self.joy.axis(self.hardware_input_id).value
+            el = gremlin.event_handler.EventListener()            
+            el.joystick_event.emit(gremlin.event_handler.Event(
+                    event_type=InputType.JoystickAxis,
+                    device_guid=self.device_guid,
+                    identifier=self.hardware_input_id,
+                    value=current_joy_value
+                ))            
+
 
     def process_event(self, event, value):
         if self.input_type == InputType.JoystickAxis:
@@ -347,7 +382,7 @@ class MapToScFunctor(gremlin.base_classes.AbstractFunctor):
         return needs_auto_release
 
 
-class MapToSc(gremlin.base_classes.AbstractAction):
+class MapToSc(gremlin.base_profile.AbstractAction):
 
     """Action remapping physical joystick inputs to Game-defined inputs."""
 
@@ -373,8 +408,8 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         super().__init__(parent)
 
         gremlin.util.log("MapToSC::Init")
-
-        self.input_type = self.parent.parent.input_type
+        self.parent = parent
+        self.input_type = self.input_item.input_type
         self.axis_mode = "absolute"
         self.axis_scaling = 1.0
         self.category_id = None
@@ -393,15 +428,19 @@ class MapToSc(gremlin.base_classes.AbstractAction):
         reader.resetControlsMapping(controls_mapping)
 
     def getVjoyDeviceId(self, category, control):
-        # Finally get the selected control from the controls list
-        category_entry = next((x for x in self.controls_list if x["category_id"] == category), None) 
+        # Make sure the mapping is valid otherwise throw an exception
+        category_entry = next((x for x in self.controls_list if x["category_id"] == category), None)
         control_entry = next((x for x in category_entry["values"] if x["id"] == control), None)
+        if control_entry is None:
+            raise gremlin.error.GremlinError("SC Mapping is missing. Make sure your Controls Mapping file is the right version.")
         vjoy_device_id = control_entry["vjoy"]
         return vjoy_device_id
 
     def getVjoyInputId(self, category, control):
         category_entry = next((x for x in self.controls_list if x["category_id"] == category), None) 
         control_entry = next((x for x in category_entry["values"] if x["id"] == control), None)
+        if control_entry is None:
+            raise gremlin.error.GremlinError("SC Mapping is missing. Make sure your Controls Mapping file is the right version.")
         vjoy_input_type = control_entry["type"]
         if "axis" in vjoy_input_type:
             vjoy_input_id = control_entry["axis"]
@@ -569,11 +608,11 @@ class ScControlsSelector(QtWidgets.QWidget):
     def set_selection(self, input_type, category_id, control_id):
         gremlin.util.log("ControlsSelector::set selection: " + time.strftime("%a, %d %b %Y %H:%M:%S"))
         if category_id not in self._category_registry:
-            return
+            raise ProfileError(f"Bad Mapping - Category Id: {category_id}, Control Id: {control_id} ")
 
         control = next((x for x in self.controls_list if x["category_id"] == category_id), None)
         if next((x for x in control["values"] if x["id"] == control_id), None) == None:
-            return
+            raise ProfileError(f"Bad Mapping - Category Id: {category_id}, Control Id: {control_id} ")
 
         # # Get the index of the combo box associated with this category
         category_index = [index for (index, category) in enumerate(self._category_registry) if category == category_id][0]

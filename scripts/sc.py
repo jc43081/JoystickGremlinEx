@@ -13,7 +13,7 @@ import time
 import random
 import threading
 
-
+import gremlin.input_devices
 
 
 # class RemoteState():
@@ -124,18 +124,18 @@ atexit.register(exit_handler)
 # gets a bracket value for a given joystick value - will be the low or high bracket depending on direction
 def get_value(direction, current):
     old_value = bump_a_table[1] # smallest value possible
-    gremlin.util.log("current joystick value: %s" % (current))
+    gremlin.util.log(f"current joystick value: {current}")
     for value in bump_a_table:
-        gremlin.util.log("current bracket: [%s, %s]" % (old_value, value))
+        gremlin.util.log(f"current bracket: [{old_value}, {value}]")
         if current >= old_value and ((direction > 0 and current < value) or (direction < 0 and current <= value)):
             if direction > 0:
-                gremlin.util.log("return value: %s" % (value))  
+                gremlin.util.log(f"return value: {value}")  
                 return value
             else:
-                gremlin.util.log("return value: %s" % (old_value))
+                gremlin.util.log(f"return value: {old_value}")
                 return old_value
         old_value = value
-    gremlin.util.log("no bracket found: return value: %s" % (value))    
+    gremlin.util.log(f"no bracket found: return value: {value}")    
     return value
     
     
@@ -772,7 +772,8 @@ class Wiggle():
             syslog.debug("Wiggle stop local requested...")
             with self._lock:
                 self._wiggle_local_stop_requested.set()
-                self._wiggle_local_thread.join()
+                if self._wiggle_local_thread.is_alive():
+                    self._wiggle_local_thread.join()
                 syslog.debug("Wiggle thread local exited...")
                 self._wiggle_local_thread = None
                 self._wiggle_local_stop_requested = None
@@ -781,7 +782,8 @@ class Wiggle():
             syslog.debug("Wiggle stop local requested...")
             with self._lock:
                 self._wiggle_remote_stop_requested.set()
-                self._wiggle_remote_thread.join()
+                if self._wiggle_remote_thread.is_alive():
+                    self._wiggle_remote_thread.join()
                 syslog.debug("Wiggle thread remote exited...")
                 self._wiggle_remote_thread = None            
                 self._wiggle_remote_stop_requested = None

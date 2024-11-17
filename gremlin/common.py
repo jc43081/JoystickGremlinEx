@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,153 +17,16 @@
 
 import enum
 import logging
-
 import gremlin.error
+import os
+import sys
 
+from PySide6 import QtGui
 
-class SingletonDecorator:
+from gremlin.input_types import InputType
+import gremlin.types
+import gremlin.keyboard
 
-    """Decorator turning a class into a singleton."""
-
-    def __init__(self, klass):
-        self.klass = klass
-        self.instance = None
-
-    def __call__(self, *args, **kwargs):
-        if self.instance is None:
-            self.instance = self.klass(*args, **kwargs)
-        return self.instance
-
-
-class InputType(enum.Enum):
-
-    """Enumeration of possible input types."""
-
-    Keyboard = 1
-    JoystickAxis = 2
-    JoystickButton = 3
-    JoystickHat = 4
-    Mouse = 5
-    VirtualButton = 6
-
-    @staticmethod
-    def to_string(value):
-        try:
-            return _InputType_to_string_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError("Invalid type in lookup")
-
-    @staticmethod
-    def to_enum(value):
-        try:
-            return _InputType_to_enum_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError("Invalid type in lookup")
-
-
-_InputType_to_string_lookup = {
-    InputType.JoystickAxis: "axis",
-    InputType.JoystickButton: "button",
-    InputType.JoystickHat: "hat",
-    InputType.Keyboard: "key",
-}
-
-_InputType_to_enum_lookup = {
-    "axis": InputType.JoystickAxis,
-    "button": InputType.JoystickButton,
-    "hat": InputType.JoystickHat,
-    "key": InputType.Keyboard
-}
-
-
-class AxisNames(enum.Enum):
-
-    X = 1
-    Y = 2
-    Z = 3
-    RX = 4
-    RY = 5
-    RZ = 6
-    SLIDER = 7
-    DIAL = 8
-
-    @staticmethod
-    def to_string(value):
-        try:
-            return _AxisNames_to_string_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError(f"Invalid AxisName lookup, {value}")
-
-    @staticmethod
-    def to_enum(value):
-        try:
-            return _AxisNames_to_enum_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError(f"Invalid AxisName lookup, {value}")
-
-
-_AxisNames_to_string_lookup = {
-    AxisNames.X: "X Axis",
-    AxisNames.Y: "Y Axis",
-    AxisNames.Z: "Z Axis",
-    AxisNames.RX: "X Rotation",
-    AxisNames.RY: "Y Rotation",
-    AxisNames.RZ: "Z Rotation",
-    AxisNames.SLIDER: "Slider",
-    AxisNames.DIAL: "Dial"
-}
-
-_AxisNames_to_enum_lookup = {
-    "X Axis": AxisNames.X,
-    "Y Axis": AxisNames.Y,
-    "Z Axis": AxisNames.Z,
-    "X Rotation": AxisNames.RX,
-    "Y Rotation": AxisNames.RY,
-    "Z Rotation": AxisNames.RZ,
-    "Slider": AxisNames.SLIDER,
-    "Dial": AxisNames.DIAL
-}
-
-
-class AxisButtonDirection(enum.Enum):
-
-    """Possible activation directions for axis button instances."""
-
-    Anywhere = 1
-    Below = 2
-    Above = 3
-
-    @staticmethod
-    def to_string(value):
-        try:
-            return _AxisButtonDirection_to_string_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError(
-                f"Invalid AxisButtonDirection lookup, {value}"
-            )
-
-    @staticmethod
-    def to_enum(value):
-        try:
-            return _AxisButtonDirection_to_enum_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError(
-                f"Invalid AxisButtonDirection lookup, {value}"
-            )
-
-
-_AxisButtonDirection_to_string_lookup = {
-    AxisButtonDirection.Anywhere: "anywhere",
-    AxisButtonDirection.Above: "above",
-    AxisButtonDirection.Below: "below"
-}
-
-
-_AxisButtonDirection_to_enum_lookup = {
-    "anywhere": AxisButtonDirection.Anywhere,
-    "above": AxisButtonDirection.Above,
-    "below": AxisButtonDirection.Below
-}
 
 
 def input_to_ui_string(input_type, input_id):
@@ -173,66 +36,31 @@ def input_to_ui_string(input_type, input_id):
     :param input_id the corresponding id
     :return string for UI usage of the given data
     """
+    
+    from gremlin.keyboard import key_from_code
+    
+
+    if hasattr(input_id, "display_name"):
+        # use the built-in function
+        return input_id.display_name
+
+
     if input_type == InputType.JoystickAxis:
         try:
-            return AxisNames.to_string(AxisNames(input_id))
+            return gremlin.types.AxisNames.to_string(gremlin.types.AxisNames(input_id))
         except gremlin.error.GremlinError:
             return f"Axis {input_id:d}"
-    elif input_type == InputType.Keyboard:
-        return gremlin.macro.key_from_code(*input_id).name
+    elif input_type == InputType.KeyboardLatched:
+        # input ID contains a Key object
+        return input_id.name
+    elif input_type in (InputType.Keyboard, InputType.KeyboardLatched):
+        if isinstance(input_id, gremlin.keyboard.Key):
+            return  key_from_code(input_id.scan_code, input_id.is_extended).name
+        
+        return key_from_code(input_id[0],input_id[1]).name
     else:
         return f"{InputType.to_string(input_type).capitalize()} {input_id}"
 
-
-class MouseButton(enum.Enum):
-
-    """Enumeration of all possible mouse buttons."""
-
-    Left = 1
-    Right = 2
-    Middle = 3
-    Forward = 4
-    Back = 5
-    WheelUp = 10
-    WheelDown = 11
-
-    @staticmethod
-    def to_string(value):
-        try:
-            return _MouseButton_to_string_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError("Invalid type in lookup")
-
-    @staticmethod
-    def to_enum(value):
-        if isinstance(value, int):
-            return MouseButton(value)
-        try:
-            return _MouseButton_to_enum_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError("Invalid type in lookup")
-
-
-_MouseButton_to_string_lookup = {
-    MouseButton.Left: "Left",
-    MouseButton.Right: "Right",
-    MouseButton.Middle: "Middle",
-    MouseButton.Forward: "Forward",
-    MouseButton.Back: "Back",
-    MouseButton.WheelUp: "Wheel Up",
-    MouseButton.WheelDown: "Wheel Down",
-}
-
-
-_MouseButton_to_enum_lookup = {
-    "Left": MouseButton.Left,
-    "Right": MouseButton.Right,
-    "Middle": MouseButton.Middle,
-    "Forward": MouseButton.Forward,
-    "Back": MouseButton.Back,
-    "Wheel Up": MouseButton.WheelUp,
-    "Wheel Down": MouseButton.WheelDown,
-}
 
 
 def index_to_direction(direction):
@@ -276,42 +104,6 @@ direction_tuple_lookup = {
     "North West": (-1, 1)
 }
 
-
-class DeviceType(enum.Enum):
-
-    """Enumeration of the different possible input types."""
-
-    Keyboard = 1
-    Joystick = 2
-    VJoy = 3
-
-    @staticmethod
-    def to_string(value):
-        try:
-            return _DeviceType_to_string_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError("Invalid type in lookup")
-
-    @staticmethod
-    def to_enum(value):
-        try:
-            return _DeviceType_to_enum_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError("Invalid type in lookup")
-
-
-_DeviceType_to_string_lookup = {
-    DeviceType.Keyboard: "keyboard",
-    DeviceType.Joystick: "joystick",
-    DeviceType.VJoy: "vjoy"
-}
-
-
-_DeviceType_to_enum_lookup = {
-    "keyboard": DeviceType.Keyboard,
-    "joystick": DeviceType.Joystick,
-    "vjoy": DeviceType.VJoy
-}
 
 
 class PluginVariableType(enum.Enum):
@@ -368,56 +160,3 @@ _PluginVariableType_to_enum_lookup = {
     "Mode": PluginVariableType.Mode,
     "Selection": PluginVariableType.Selection
 }
-
-
-class MergeAxisOperation(enum.Enum):
-
-    """Possible merge axis operation modes."""
-
-    Average = 1
-    Minimum = 2
-    Maximum = 3
-    Sum = 4
-
-    @staticmethod
-    def to_string(value):
-        try:
-            return _MergeAxisOperation_to_string_lookup[value]
-        except KeyError:
-            raise gremlin.error.GremlinError(
-                "Invalid MergeAxisOperation in lookup"
-            )
-
-    @staticmethod
-    def to_enum(value):
-        try:
-            return _MergeAxisOperation_to_enum_lookup[value.lower()]
-        except KeyError:
-            raise gremlin.error.GremlinError(
-                "Invalid MergeAxisOperation in lookup"
-            )
-
-
-_MergeAxisOperation_to_string_lookup = {
-    MergeAxisOperation.Average: "average",
-    MergeAxisOperation.Minimum: "minimum",
-    MergeAxisOperation.Maximum: "maximum",
-    MergeAxisOperation.Sum: "sum"
-}
-
-_MergeAxisOperation_to_enum_lookup = {
-    "average": MergeAxisOperation.Average,
-    "minimum": MergeAxisOperation.Minimum,
-    "maximum": MergeAxisOperation.Maximum,
-    "sum": MergeAxisOperation.Sum
-}
-
-
-def get_guid(strip=True):
-    ''' generates a reasonably lowercase unique guid string '''
-    import uuid
-    guid = f"{uuid.uuid4()}"
-    if strip:
-        return guid.replace("-",'')
-    return guid
-    

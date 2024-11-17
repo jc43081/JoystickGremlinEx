@@ -44,7 +44,7 @@ def sanitize_path(path):
     :param path path to sanitize
     :return sanitized file path
     """
-    return path.replace("\\", "__").replace("-", "_")
+    return path.replace("\\", "__").replace("-", "_").replace("@", "_").replace("+", "_")
 
 
 def create_data_for_file(path):
@@ -116,19 +116,20 @@ def create_folder_structure(folder_list):
     for folder in folder_list:
         dirs = folder.split("\\")
         for i in range(len(dirs)):
-            path = "__".join(dirs[:i+1])
+            path = sanitize_path("__".join(dirs[:i+1]))
             if path not in structure:
                 structure[path] = create_node(
                     "Directory",
-                    {"Id": path, "Name": dirs[i]}
+                    {"Id": sanitize_path(path), "Name": dirs[i]}
                 )
                 if i > 0:
-                    parent_path = "__".join(dirs[:i])
+                    parent_path = sanitize_path("__".join(dirs[:i]))
                     structure[parent_path].append(structure[path])
 
         # Link top level folders to the install folder
         if len(dirs) == 1:
-            structure["jg"].append(structure[dirs[0]])
+            dirName = sanitize_path(dirs[0])
+            structure["jg"].append(structure[dirName])
 
     return structure
 
@@ -226,7 +227,7 @@ def create_document():
             #"Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
             #"Id": "7cdb8375-66a1-4114-be79-b17027e8c0df", # 13.40.7ex
             #"Id": "739095a7-19cc-4154-ac9c-c51f5f516527", # 13.40.8ex
-            "ProductCode": "ac4c090a-abfa-4a2c-a513-e6ceed6024c8", # 13.40.9-sc.9
+            "ProductCode": "ecf47554-75cb-40a8-ab8a-938b7ac63e99", # 13.40.14-sc.1
             "UpgradeCode": "1f5d614b-6cec-47d8-90e3-40f7e7458f7a",
             "Language": "1033",
             "Codepage": "1252",
@@ -360,7 +361,7 @@ def create_shortcuts(package):
     )
     n3 = create_node(
         "Component",
-        {"Id": "ProgramMenuDir", "Guid": "11ab7593-4b4e-470d-8a56-4791b40c0838"}
+        {"Id": "ProgramMenuDir", "Guid": "a9736055-0450-47f3-96a5-e38b2ab7218d"}
     )
     n3.append(create_node(
         "RemoveFolder",
@@ -398,11 +399,16 @@ def write_xml(node, fname):
     :param node node of the XML document
     :param fname the file to store the XML document in
     """
-    ugly_xml = ElementTree.tostring(node, encoding="unicode")
-    dom_xml = minidom.parseString(ugly_xml)
-    with open(fname, "w") as out:
-        out.write(dom_xml.toprettyxml(indent="    "))
 
+    # ugly_xml = ElementTree.tostring(node, encoding="unicode")
+    # dom_xml = minidom.parseString(ugly_xml)
+    # with open(fname, "w") as out:
+    #     out.write(dom_xml.toprettyxml(indent="    "))
+
+    
+    tree = ElementTree.ElementTree(node)
+    ElementTree.indent(tree)
+    tree.write(fname, xml_declaration=True, encoding="utf-8")
 
 def main():
     # Command line arguments
