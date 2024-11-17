@@ -1,6 +1,6 @@
 # -*- coding: utf-8; -*-
 
-# Copyright (C) 2015 - 2019 Lionel Ott - Modified by Muchimi (C) EMCS 2024 and other contributors
+# Based on original work by (C) Lionel Ott -  (C) EMCS 2024 and other contributors
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,11 +20,14 @@ import logging
 import threading
 
 import dinput
+import gremlin.event_handler
+import gremlin.shared_state
 
 from . import common, error, util
 from vjoy import vjoy
 from dinput import DeviceSummary
-
+from gremlin.input_types import InputType
+import gremlin.config
 
 # List of all joystick devices
 _joystick_devices = []
@@ -92,6 +95,50 @@ def vjoy_devices():
     """
     return [dev for dev in _joystick_devices if dev.is_virtual]
 
+def scale_to_range(value, source_min = -1.0, source_max = 1.0, target_min = -1.0, target_max = 1.0, invert = False):
+    ''' scales a value on one range to the new range
+    
+    value: the value to scale
+    r_min: the source value's min range
+    r_max: the source value's max range
+    new_min: the new range's min
+    new_max: the new range's max
+    invert: true if the value should be reversed
+    '''
+    r_delta = source_max - source_min
+    if r_delta == 0:
+        # frame the value if no valid range given
+        if value < source_min:
+            value = -1.0
+        if value > source_max:
+            value = 1.0
+
+    if invert:
+        result = (((source_max - value) * (target_max - target_min)) / (source_max - source_min)) + target_min
+    else:
+        result = (((value - source_min) * (target_max - target_min)) / (source_max - source_min)) + target_min
+        
+    # clamp rounding precision
+    if result < target_min:
+        result = target_min
+    elif result > target_max:
+        result = target_max
+    return result + 0
+
+def get_axis(guid, index, normalized = True):
+    ''' gets the value of the specified axis
+     
+    :param: normalized  - if set - normalizes to -1.0 +1.0 floating point
+       
+    '''
+    value = dinput.DILL.get_axis(guid, index)
+    if normalized:
+        return gremlin.util.scale_to_range(value, source_min = -32767, source_max = 32767, target_min = -1, target_max = 1)
+
+
+
+    
+
 
 def physical_devices():
     """Returns the list of physical devices.
@@ -107,7 +154,7 @@ def select_first_valid_vjoy_input(valid_types):
     Parameters
     ==========
     valid_types : list
-        List of common.InputType values that are valid type to be returned
+        List of InputType values that are valid type to be returned
 
     Return
     ======
@@ -115,22 +162,22 @@ def select_first_valid_vjoy_input(valid_types):
         Dictionary containing the information about the selected vJoy input
     """
     for dev in vjoy_devices():
-        if common.InputType.JoystickAxis in valid_types and dev.axis_count > 0:
+        if InputType.JoystickAxis in valid_types and dev.axis_count > 0:
             return {
                 "device_id": dev.vjoy_id,
-                "input_type": common.InputType.JoystickAxis,
+                "input_type": InputType.JoystickAxis,
                 "input_id": dev.axis_map[0].axis_index
             }
-        elif common.InputType.JoystickButton in valid_types and dev.button_count > 0:
+        elif InputType.JoystickButton in valid_types and dev.button_count > 0:
             return {
                 "device_id": dev.vjoy_id,
-                "input_type": common.InputType.JoystickButton,
+                "input_type": InputType.JoystickButton,
                 "input_id": 1
             }
-        elif common.InputType.JoystickHat in valid_types and dev.hat_count > 0:
+        elif InputType.JoystickHat in valid_types and dev.hat_count > 0:
             return {
                 "device_id": dev.vjoy_id,
-                "input_type": common.InputType.JoystickHat,
+                "input_type": InputType.JoystickHat,
                 "input_id": 1
             }
     return None
@@ -193,6 +240,14 @@ def linear_axis_index(axis_map, axis_index):
     raise error.GremlinError("Linear axis lookup failed")
 
 
+def reset_devices():
+    ''' resets devices on device change '''
+    logging.getLogger("system").info("Joystick device change detected - re-initializing joysticks")
+    joystick_devices_initialization()
+    el = gremlin.event_handler.EventListener()
+    el.device_change_event.emit()
+
+
 def joystick_devices_initialization():
     """Initializes joystick device information.
 
@@ -203,6 +258,8 @@ def joystick_devices_initialization():
     windows id assigned to it.
     """
     global _joystick_devices, _joystick_init_lock
+    
+    verbose = gremlin.config.Configuration().verbose_mode_inputs
 
     _joystick_init_lock.acquire()
 
@@ -216,9 +273,18 @@ def joystick_devices_initialization():
     # device registry
     devices = []
     device_count = dinput.DILL.get_device_count()
+    virtual_count = 0
+    real_count = 0
     for i in range(device_count):
         info = dinput.DILL.get_device_information_by_index(i)
         devices.append(info)
+        syslog.info(f"\t[{i}] {info.device_guid} {info.name}")
+        if info.is_virtual: 
+            virtual_count += 1
+        else:
+            real_count += 1
+
+    syslog.info(f"Found {real_count} hardware devices and {virtual_count} virtual devices")
 
     # Process all devices again to detect those that have been added and those
     # that have been removed since the last time this function ran.
@@ -230,12 +296,14 @@ def joystick_devices_initialization():
     for new_dev in devices:
         if new_dev not in _joystick_devices:
             device_added = True
-            syslog.debug(f"Added: name={new_dev.name} guid={new_dev.device_guid}")
+            if verbose:
+                syslog.debug(f"Added: name={new_dev.name} guid={new_dev.device_guid}")
                 
     for old_dev in _joystick_devices:
         if old_dev not in devices:
             device_removed = True
-            syslog.debug(f"Removed: name={old_dev.name} guid={old_dev.device_guid}")
+            if verbose:
+                syslog.debug(f"Removed: name={old_dev.name} guid={old_dev.device_guid}")
 
     # Terminate if no change occurred
     if not device_added and not device_removed:
@@ -251,7 +319,8 @@ def joystick_devices_initialization():
     vjoy_lookup = {}
     for dev in [dev for dev in devices if dev.is_virtual]:
         hash_value = (dev.axis_count, dev.button_count, dev.hat_count)
-        syslog.debug(f"vJoy guid={dev.device_guid}: {hash_value}")
+        if verbose:
+            syslog.debug(f"vJoy guid={dev.device_guid}: {hash_value}")
 
         # Only unique combinations of axes, buttons, and hats are allowed
         # for vJoy devices
@@ -291,7 +360,9 @@ def joystick_devices_initialization():
         # the previous step we can directly link the SDL and vJoy device
         if hash_value in vjoy_lookup:
             vjoy_lookup[hash_value].set_vjoy_id(i)
-            syslog.debug(f"vjoy id {i:d}: {hash_value} - MATCH")
+            vjoy_lookup[hash_value].name = f"{vjoy_lookup[hash_value].name} #{i}"
+            if verbose:
+                syslog.debug(f"vjoy id {i:d}: {hash_value} - MATCH")
         else:
             # should_terminate = True
             syslog.debug(f"vjoy id {i:d}: {hash_value} - ERROR - vJoy device exists but DILL does not see it - check HIDHide config if enabled and process is whitelisted")
@@ -321,3 +392,5 @@ def joystick_devices_initialization():
         _joystick_device_guid_map[device.device_guid] = device
 
     _joystick_init_lock.release()
+
+

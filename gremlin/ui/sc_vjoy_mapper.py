@@ -19,13 +19,14 @@ import logging
 import os
 import re
 
+from lxml import etree as ElementTree
 from PySide6 import QtWidgets, QtCore, QtGui
 
 import gremlin, logging
-from . import common
+import gremlin.ui.ui_common
 
 
-class ScVjoyMapperUI(common.BaseDialogUi):
+class ScVjoyMapperUI(gremlin.ui.ui_common.BaseDialogUi):
 
     """Allows the creation of a controlized Controls Profile 
     for the current Star Citize vJoy Mapping"""
@@ -40,7 +41,7 @@ class ScVjoyMapperUI(common.BaseDialogUi):
 
         self.logger = logging.getLogger("system")
         self.base_control_profile = gremlin.util.userprofile_path()
-        self.reg_vjoy_order = reg=re.compile('1-5],')
+        self.reg_vjoy_order = reg=re.compile('1-8],')
         self.vjoy_ordering = "1,2,3,4,5"
         self.sc_installation = "C:\\Program Files\\Robert Space Industries\\Star Citizen\\LIVE"
 
@@ -136,8 +137,7 @@ class ScVjoyMapperUI(common.BaseDialogUi):
             self.sc_installation_textbox.setText(directory)
             self.logger.debug(f"Selected directory: {directory}")
        
-
-    def _match(self, strg, search=re.compile(r'[^1-5,]').search):
+    def _match(self, strg, search=re.compile(r'[^1-8,]').search):
         return not bool(search(strg))       
 
     def _run_sc_mapper(self):
@@ -148,7 +148,7 @@ class ScVjoyMapperUI(common.BaseDialogUi):
 
         vjoy_order = self.vjoy_ordering.split(",")
         if self._match(self.vjoy_ordering) == False or len(vjoy_order) != 5:
-            gremlin.util.display_error("vJoy Order must have 5 numbers (1-5) separated by commas")
+            gremlin.util.display_error("vJoy Order must have 5 numbers (1-8) separated by commas")
             return
 
         if os.path.exists(self.base_control_profile) == False or self.base_control_profile.endswith(".xml") == False:
@@ -167,15 +167,26 @@ class ScVjoyMapperUI(common.BaseDialogUi):
         finally:
             control_profile_file.close()
 
-        self.logger.debug(f"Starting remap...")
+        self.logger.debug(f"Starting remap vjoys...")
         # Map with a placeholder to avoid replacing too much
         i = 1
         for vjoy in vjoy_order:
             control_profile = control_profile.replace(f"js{i}_", f"holding{vjoy}_")
             i = i + 1
 
-        for i in range(1,6):
+        for i in range(1,9):
             control_profile = control_profile.replace(f"holding{i}_", f"js{i}_")
+
+        self.logger.debug(f"Starting remapping instances...")
+        vjoy_instances = self._getVJoyNumbers()        
+        # Map with a placeholder to avoid replacing too much
+        i = 1
+        for vjoy in vjoy_instances:
+            control_profile = control_profile.replace(f"instance=\"{i}\"", f"instance=\"holding{vjoy}\"")
+            i = i + 1
+
+        for i in range(1,9):
+            control_profile = control_profile.replace(f"instance=\"holding{i}\"", f"instance=\"{i}\"")
 
         self.logger.debug(f"Completed remap...")
 
@@ -192,7 +203,20 @@ class ScVjoyMapperUI(common.BaseDialogUi):
         box = QtWidgets.QMessageBox(
             QtWidgets.QMessageBox.Icon.Information,
             "Info",
-            "The updated Control Profile is now ready!\n\nImport the profile into Star Citizen again to update it with the new mappings.",
+            "The updated Control Profile is now ready!\n\nImport the profile into Star Citizen to update it with the new mappings.",
             QtWidgets.QMessageBox.Ok
         )
-        box.exec()          
+        box.exec()
+
+
+    def _getVJoyNumbers(self):
+        vjoy_ordering = []
+        tree = ElementTree.parse(os.path.join(self.sc_installation,f"user\\client\\0\\Profiles\\default\\actionmaps.xml"))
+        actionProfiles = tree.getroot().find("ActionProfiles")
+        for options in actionProfiles.findall('options'):
+            if options.get('type') == 'joystick':
+                joystick = options.get('Product')
+                if joystick != None and 'vjoy' in joystick.lower():
+                    vjoy_ordering.append(options.get('instance'))
+        return vjoy_ordering
+    

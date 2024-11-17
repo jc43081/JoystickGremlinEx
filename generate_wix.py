@@ -128,7 +128,8 @@ def create_folder_structure(folder_list):
 
         # Link top level folders to the install folder
         if len(dirs) == 1:
-            structure["jg"].append(structure[dirs[0]])
+            dirName = sanitize_path(dirs[0])
+            structure["jg"].append(structure[dirName])
 
     return structure
 
@@ -226,7 +227,7 @@ def create_document():
             #"Id": "6472cca8-d352-4186-8a98-ca6ba33d083c", # 13.40.6ex
             #"Id": "7cdb8375-66a1-4114-be79-b17027e8c0df", # 13.40.7ex
             #"Id": "739095a7-19cc-4154-ac9c-c51f5f516527", # 13.40.8ex
-            "ProductCode": "dc38373b-fb91-4cf4-ad03-e1b44972ca33", # 13.40.13-sc.2
+            "ProductCode": "ecf47554-75cb-40a8-ab8a-938b7ac63e99", # 13.40.14-sc.1
             "UpgradeCode": "1f5d614b-6cec-47d8-90e3-40f7e7458f7a",
             "Language": "1033",
             "Codepage": "1252",
@@ -398,11 +399,16 @@ def write_xml(node, fname):
     :param node node of the XML document
     :param fname the file to store the XML document in
     """
-    ugly_xml = ElementTree.tostring(node, encoding="unicode")
-    dom_xml = minidom.parseString(ugly_xml)
-    with open(fname, "w") as out:
-        out.write(dom_xml.toprettyxml(indent="    "))
 
+    # ugly_xml = ElementTree.tostring(node, encoding="unicode")
+    # dom_xml = minidom.parseString(ugly_xml)
+    # with open(fname, "w") as out:
+    #     out.write(dom_xml.toprettyxml(indent="    "))
+
+    
+    tree = ElementTree.ElementTree(node)
+    ElementTree.indent(tree)
+    tree.write(fname, xml_declaration=True, encoding="utf-8")
 
 def main():
     # Command line arguments

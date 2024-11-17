@@ -73,6 +73,7 @@
     <addaction name="actionDeviceInformation"/>
     <addaction name="actionCalibration"/>
     <addaction name="actionInputViewer"/>
+    <addaction name="actionScVjoyMapper"/>
     <addaction name="separator"/>
     <addaction name="actionPDFCheatsheet"/>
     <addaction name="separator"/>
@@ -243,7 +244,12 @@
     <string>Input Viewer</string>
    </property>
   </action>
- </widget>
+  <action name="actionScVjoyMapper">
+    <property name="text">
+     <string>SC Vjoy Mapper</string>
+    </property>
+   </action> 
+</widget>
  <resources/>
  <connections/>
 </ui>
